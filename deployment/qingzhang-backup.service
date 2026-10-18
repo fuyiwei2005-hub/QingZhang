@@ -1,0 +1,9 @@
+[Unit]
+Description=Create a consistent Qingzhang database backup
+
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/qingzhang/scripts/backup-database.py --state /opt/qingzhang/.wrangler/state --output /var/backups/qingzhang
+NoNewPrivileges=true
+PrivateTmp=true
