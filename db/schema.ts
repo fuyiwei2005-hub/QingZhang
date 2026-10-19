@@ -72,3 +72,12 @@ export const recurringEvents = sqliteTable("recurring_events", {
   id: integer("id").primaryKey({ autoIncrement: true }), userId: text("user_id").notNull(),
   ruleId: integer("rule_id").notNull(), date: text("date").notNull(), status: text("status", { enum: ["confirmed", "skipped"] }).notNull(),
 }, (t) => [uniqueIndex("recurring_events_unique").on(t.ruleId, t.date)]);
+
+export const wheels = sqliteTable("wheels", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  options: text("options", { mode: "json" }).$type<string[]>().notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, t => [index("wheels_user_idx").on(t.userId)]);

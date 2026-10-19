@@ -323,3 +323,11 @@ body { font-family: "Inter", "SF Pro Display", "PingFang SC", "Microsoft YaHei",
  .filter-advanced > summary::after { content: " ＋"; }
  .filter-advanced[open] > summary::after { content: " −"; }
 }
+
+.wheel-stage { position: relative; width: min(100%, 300px); aspect-ratio: 1; margin: 22px auto; }
+.wheel-disc { position: absolute; inset: 0; border: 7px solid white; border-radius: 50%; box-shadow: 0 5px 24px #244c3420; transition: transform 3.6s cubic-bezier(.16,.8,.22,1); }
+.wheel-label { position: absolute; width: 25%; transform: translate(-50%,-50%); color: #254c38; font-weight: 600; overflow-wrap: anywhere; line-height: 1.3; }
+.wheel-pointer { position: absolute; top: -7px; left: calc(50% - 12px); z-index: 2; width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 27px solid #245b3c; }
+.wheel-center { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); display: grid; place-items: center; width: 45px; height: 45px; background: white; border-radius: 50%; color: #245b3c; box-shadow: 0 2px 8px #244c3420; }
+@media(max-width: 767px) { .wheel-stage { width: min(100%, 230px); margin: 17px auto; } }
+@media(prefers-reduced-motion: reduce) { .wheel-disc { transition: none; } }

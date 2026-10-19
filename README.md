@@ -9,6 +9,7 @@
 - 历史收支统计、支出饼图、分类排行、月总预算与分类预算。
 - 微信、支付宝、银行卡、现金账户及账户转账。
 - 周期账单、笔记、标签、置顶和待办事项。
+- 转盘抽签：自定义选项、等概率抽签、保存和切换多个转盘，同账号同步。
 - 回收站、CSV 导出、数据库备份与管理员恢复。
 - 手机适配；账目、分类预算及待办采用连续单列展示。
 
@@ -25,7 +26,7 @@ npm ci
 npm run build
 ```
 
-首次启动前，按顺序执行 drizzle 中的五个 SQL 文件，每个只执行一次。例如：
+首次启动前，按顺序执行 drizzle 中的六个 SQL 文件，每个只执行一次。例如：
 
 ```sh
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_green_ledger.sql
@@ -37,6 +38,7 @@ node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1
 2. `0002_uneven_puppet_master.sql`
 3. `0003_handy_warlock.sql`
 4. `0004_ambiguous_daimon_hellstrom.sql`
+5. `0005_saved_wheels.sql`
 
 然后运行：
 
@@ -75,3 +77,5 @@ PowerShell 下先设置 `$env:QINGZHANG_BASE_PATH='/qingzhang'`，再执行构�
 依赖、构建产物、临时部署包、真实数据库和环境密钥不进入仓库。`.wrangler/state/` 包含业务数据，更新代码时必须保留。
 
 API 检查脚本会创建临时账号，运行前阅读脚本并使用测试数据库。部署和恢复方法见 [DEPLOYMENT.md](DEPLOYMENT.md)。
+
+转盘检查：运行 node scripts/check-wheels.mjs。scripts/check-wheels-api.py 验证转盘增删改查、多转盘保存和账号隔离；仅在目标实例目录下使用，脚本会清理临时测试账号。
