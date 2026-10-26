@@ -97,3 +97,10 @@ export const lifeEvents = sqliteTable("life_events", {
  date: text("date").notNull(), amount: real("amount").notNull().default(0), note: text("note").notNull().default(""),
  eventKey: text("event_key").notNull(),
 }, t => [uniqueIndex("life_events_key_idx").on(t.userId,t.eventKey), index("life_events_item_idx").on(t.itemId)]);
+
+export const customCategories = sqliteTable("custom_categories", {
+ id: integer("id").primaryKey({ autoIncrement: true }),
+ userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+ type: text("type", {enum:["expense","income"]}).notNull(),
+ name: text("name").notNull(),
+}, t => [uniqueIndex("custom_categories_unique").on(t.userId,t.type,t.name)]);

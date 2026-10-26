@@ -1,3 +1,4 @@
+import { userCategories } from "../../../lib/user-categories";
 import { and, eq } from "drizzle-orm";
 import { env } from "cloudflare:workers";
 import { getDb } from "../../../db";
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object") return Response.json({ error: "无效请求" }, { status: 400 });
   const v = body as Record<string, unknown>;
-  const entry = entryInput({ ...v, date: v.startDate });
+  const entry = entryInput({ ...v, date: v.startDate }, await userCategories(user.id));
   if (!entry || !["weekly", "monthly", "yearly"].includes(String(v.frequency)) || (v.endDate && (!validDate(v.endDate) || v.endDate < entry.date))) return Response.json({ error: "请核对周期规则、起止日期和金额" }, { status: 400 });
   const { date, ...fields } = entry;
   const [rule] = await getDb().insert(recurringRules).values({ ...fields, userId: user.id, startDate: date, endDate: typeof v.endDate === "string" && v.endDate ? v.endDate : null, frequency: v.frequency as "weekly" | "monthly" | "yearly" }).returning();

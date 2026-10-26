@@ -1,10 +1,12 @@
 "use client";
+import { useCategories } from "./category-context";
 
 import { FormEvent, useEffect, useState } from "react";
-import { expenses } from "../lib/ledger-domain";
+
 import { api, card, field } from "../lib/client-api";
 export default function CategoryBudgetPanel({ rows, month, totalBudget }: { rows: Array<{ type: string; category: string; amount: number }>; month: string; totalBudget: number }) {
 
+  const {expenses}=useCategories();
   const [values, setValues] = useState<Record<string, string>>({}); const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [message, setMessage] = useState("");
   useEffect(() => { api<{ budgets: Record<string, number> }>("/api/category-budgets").then((data) => setValues(Object.fromEntries(Object.entries(data.budgets).map(([k, v]) => [k, String(v)])))).catch((e) => setError(e.message)); }, []);
   async function save(e: FormEvent) { e.preventDefault(); setBusy(true); setError(""); setMessage(""); try { const budgets = Object.fromEntries(Object.entries(values).filter(([, v]) => v.trim()).map(([k, v]) => [k, Number(v)])); await api("/api/category-budgets", "PUT", { budgets }); setMessage("分类预算已同步，每月按此额度执行"); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } }

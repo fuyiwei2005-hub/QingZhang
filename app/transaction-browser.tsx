@@ -1,4 +1,5 @@
 "use client";
+import { useCategories } from "./category-context";
 import { MobileSections, usePhone } from "./mobile-layout";
 import { useMemo, useState } from "react";
 import { emptyFilter, filterTransactions } from "../lib/transaction-filter";
@@ -7,6 +8,7 @@ type Transaction = { id: number; type: "expense" | "income"; amount: number; cat
 type Props = { rows: Transaction[]; onEdit: (row: Transaction) => void; onAdd: () => void; onSync: () => void };
 const inputClass = "mt-1.5 h-11 w-full min-w-0 rounded-xl border border-[#dfe7dc] bg-[#fafcf9] px-3 text-sm text-[#243e2c]";
 export default function TransactionBrowser(props: Props) {
+ const custom=useCategories();
   const phone = usePhone(); const [advanced, setAdvanced] = useState(false);
   const [filter, setFilter] = useState({ ...emptyFilter });
   const matches = useMemo(() => filterTransactions(props.rows, filter), [props.rows, filter]);
@@ -16,7 +18,7 @@ export default function TransactionBrowser(props: Props) {
   return <MobileSections initial={1} labels={["搜索筛选", "收支账目"]} className="space-y-5"><section className="filter-card surface-card rounded-[24px] border p-5 md:p-6"><div className="mb-4 flex items-center justify-between gap-3"><div><h2 className="font-semibold">搜索与筛选</h2><p className="mt-1 text-xs text-[#7b8b7c]">找到 {matches.length} / {props.rows.length} 笔账目</p></div><button onClick={() => setFilter({ ...emptyFilter })} disabled={!active} className="text-sm text-[#36734c] disabled:opacity-40">清除筛选</button></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
     <label className="text-xs text-[#758575]">关键词<input className={inputClass} value={filter.query} onChange={(e) => change("query", e.target.value)} placeholder="搜索备注、分类、账户"/></label>
     <label className="text-xs text-[#758575]">收支类型<select className={inputClass} value={filter.type} onChange={(e) => change("type", e.target.value)}><option value="">全部类型</option><option value="expense">支出</option><option value="income">收入</option></select></label>
-    <label className="text-xs text-[#758575]">分类<select className={inputClass} value={filter.category} onChange={(e) => change("category", e.target.value)}><option value="">全部分类</option>{[...new Set(props.rows.map((row) => row.category))].sort().map((category) => <option key={category}>{category}</option>)}</select></label>
+    <label className="text-xs text-[#758575]">分类<select className={inputClass} value={filter.category} onChange={(e) => change("category", e.target.value)}><option value="">全部分类</option>{[...new Set([...custom.expenses,...custom.incomes,...props.rows.map((row) => row.category)])].sort().map((category) => <option key={category}>{category}</option>)}</select></label>
     <label className="text-xs text-[#758575]">账户<select className={inputClass} value={filter.account} onChange={(e) => change("account", e.target.value)}><option value="">全部账户</option>{[...new Set(props.rows.map((row) => row.account))].sort().map((account) => <option key={account}>{account}</option>)}</select></label>
     </div><details className="filter-advanced" open={!phone || advanced} onToggle={e => { if (phone) setAdvanced(e.currentTarget.open); }}><summary>日期与金额范围{(filter.from || filter.to || filter.min || filter.max) ? " · 已设置" : ""}</summary><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
     <label className="text-xs text-[#758575]">开始日期<input type="date" className={inputClass} value={filter.from} onChange={(e) => change("from", e.target.value)}/></label>

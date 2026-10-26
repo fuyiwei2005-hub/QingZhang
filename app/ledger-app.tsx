@@ -1,4 +1,5 @@
 "use client";
+import { CategoryProvider, useCategories } from "./category-context";
 import { appPath } from "../lib/base-path";
 
 import { BarChart3, CircleDot, CalendarDays, Eye, EyeOff, ArrowUpRight, Bus, Coffee, FileText, Film, Gift, GraduationCap, HeartPulse, Home, Landmark, LogOut, Menu, MoreHorizontal, Phone, Plus, RefreshCw, Settings, Shirt, ShoppingBag, Trash2, Utensils, WalletCards, WifiOff, X } from "lucide-react";
@@ -40,7 +41,9 @@ function readJson<T>(key: string, fallback: T): T { try { return JSON.parse(loca
 function localDateValue(value = new Date()) { const offset = value.getTimezoneOffset() * 60000; return new Date(value.getTime() - offset).toISOString().slice(0, 10); }
 function draftFor(row?: Transaction): Draft { return row ? { type: row.type, amount: row.amount, category: row.category, account: row.account, note: row.note, occurredAt: row.occurredAt } : { type: "expense", amount: 0, category: "餐饮", account: "微信", note: "", occurredAt: new Date().toISOString() }; }
 
-export default function LedgerApp({ user }: { user: { name: string; email: string } }) {
+export default function LedgerApp(props: {user:{name:string;email:string}}) { return <CategoryProvider><LedgerContent {...props}/></CategoryProvider>; }
+function LedgerContent({ user }: { user: { name: string; email: string } }) {
+  const custom = useCategories();
   const [rows, setRows] = useState<Transaction[]>([]);
   const [dialog, setDialog] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -122,7 +125,8 @@ export default function LedgerApp({ user }: { user: { name: string; email: strin
   const totals = useMemo(() => monthRows.reduce((sum, row) => { sum[row.type] += row.amount; return sum; }, { expense: 0, income: 0 }), [monthRows]);
   const week = useMemo(() => Array.from({ length: 7 }, (_, index) => { const date = new Date(); date.setHours(0, 0, 0, 0); date.setDate(date.getDate() - 6 + index); const key = localDateValue(date); return { key, label: index === 6 ? "今天" : `${date.getMonth() + 1}/${date.getDate()}`, total: rows.filter((row) => row.type === "expense" && row.occurredAt.startsWith(key)).reduce((sum, row) => sum + row.amount, 0) }; }), [rows]);
   const weekMax = Math.max(...week.map((day) => day.total), 1);
-  const categoryTotals = useMemo(() => EXPENSE_CATEGORIES.map((item) => ({ ...item, total: monthRows.filter((row) => row.type === "expense" && row.category === item.name).reduce((sum, row) => sum + row.amount, 0) })).sort((a, b) => b.total - a.total), [monthRows]);
+  const expenseDefinitions = useMemo(() => [...new Set([...custom.expenses,...rows.filter(r=>r.type==="expense").map(r=>r.category)])].map((name,i)=>EXPENSE_CATEGORIES.find(c=>c.name===name)||{name,icon:MoreHorizontal,color:["#64967a","#8a83b5","#c18a5c","#669bb0"][i%4]}), [custom.expenses,rows]);
+  const categoryTotals = useMemo(() => expenseDefinitions.map((item) => ({ ...item, total: monthRows.filter((row) => row.type === "expense" && row.category === item.name).reduce((sum, row) => sum + row.amount, 0) })).sort((a, b) => b.total - a.total), [monthRows,expenseDefinitions]);
   const budgetPercent = Math.min(100, Math.round(totals.expense / budget * 100));
 
   async function logout() { await fetch(appPath("/api/auth/logout"), { method: "POST" }); localStorage.removeItem(cacheKey); location.reload(); }
@@ -167,7 +171,7 @@ export default function LedgerApp({ user }: { user: { name: string; email: strin
         </div></details>
         </MobileSections>}
         {view === "transactions" && <TransactionBrowser rows={rows} onEdit={openEditor} onAdd={() => openEditor()} onSync={() => { refreshRows().catch(() => setSyncState("error")); }} />}
-        {view === "stats" && <StatsPanel rows={rows} categories={EXPENSE_CATEGORIES} budget={budget} />}
+        {view === "stats" && <StatsPanel rows={rows} categories={expenseDefinitions} budget={budget} />}
         {view === "accounts" && <AccountManager rows={rows} />}
         {view === "notes" && <NotesPanel />}
         {view === "wheels" && <WheelPanel />}
@@ -186,7 +190,8 @@ export default function LedgerApp({ user }: { user: { name: string; email: strin
 }
 
 function Editor({ draft, setDraft, editing, deleteConfirm, setDeleteConfirm, onSubmit, onClose, onDelete }: { draft: Draft; setDraft: (draft: Draft) => void; editing: boolean; deleteConfirm: boolean; setDeleteConfirm: (value: boolean) => void; onSubmit: (e: FormEvent, amount: number) => void; onClose: () => void; onDelete: () => void }) {
-  const names = draft.type === "expense" ? EXPENSE_CATEGORIES.map((item) => item.name) : INCOME_CATEGORIES;
+  const custom = useCategories();
+  const names = [...new Set([...(draft.type === "expense" ? custom.expenses : custom.incomes), draft.category])];
   const [amountInput, setAmountInput] = useState(draft.amount ? String(draft.amount) : "");
   const [amountError, setAmountError] = useState("");
   const calculated = parseMoneyExpression(amountInput);

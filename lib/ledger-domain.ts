@@ -8,10 +8,10 @@ export function validDate(value: unknown): value is string {
 }
 export function validAmount(value: unknown): value is number { return typeof value === "number" && Number.isFinite(value) && value >= 0.01 && value <= 1e9 && Math.abs(value * 100 - Math.round(value * 100)) < 0.0001; }
 export type Entry = { type: "expense" | "income"; amount: number; category: string; account: string; note: string; date: string };
-export function entryInput(value: unknown): Entry | null {
+export function entryInput(value: unknown, categories = { expenses, incomes }): Entry | null {
   if (!value || typeof value !== "object") return null;
   const v = value as Entry;
-  if (!["expense", "income"].includes(v.type) || !validAmount(v.amount) || !validDate(v.date) || !accounts.includes(v.account) || !(v.type === "income" ? incomes : expenses).includes(v.category) || typeof v.note !== "string" || v.note.length > 120) return null;
+  if (!["expense", "income"].includes(v.type) || !validAmount(v.amount) || !validDate(v.date) || !accounts.includes(v.account) || !(v.type === "income" ? categories.incomes : categories.expenses).includes(v.category) || typeof v.note !== "string" || v.note.length > 120) return null;
   return { type: v.type, amount: v.amount, category: v.category, account: v.account, note: v.note.trim(), date: v.date };
 }
 export function todayChina() { return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()); }

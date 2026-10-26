@@ -26,7 +26,7 @@ npm ci
 npm run build
 ```
 
-首次启动前，按顺序执行 drizzle 中的七个 SQL 文件，每个只执行一次。例如：
+首次启动前，按顺序执行 drizzle 中的八个 SQL 文件，每个只执行一次。例如：
 
 ```sh
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_green_ledger.sql
@@ -40,6 +40,7 @@ node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1
 4. `0004_ambiguous_daimon_hellstrom.sql`
 5. `0005_saved_wheels.sql`
 6. `0006_life_tools.sql`
+7. `0007_custom_categories.sql`
 
 然后运行：
 
@@ -95,3 +96,9 @@ API 检查脚本会创建临时账号，运行前阅读脚本并使用测试数�
 提醒为应用内提醒（7 天内及逾期），不是关闭网页后的系统推送。除购物明确确认记账外，缴费、储蓄和借还款仅记录进度，不自动影响收支。删除生活记录会同时删除其进度历史，已生成的购物支出保留。
 
 规则检查：`node scripts/check-life.mjs`。API 检查：在测试实例根目录运行 `python scripts/check-life-api.py --base-url http://127.0.0.1:5175`，验证六模块、账号隔离、并发重复记账及还款限额，结束后清理临时账号。
+
+## 自定义常驻分类
+
+设置 → 分类中，可分别添加收入、支出分类（1～20 字，同类型不能重名）。分类长期保存在账号中，在记账、筛选、统计、分类预算、周期账单和购物记账中可用。切回页面时自动刷新账号分类。
+
+验证脚本：python scripts/check-categories-api.py --base-url http://127.0.0.1:5175，在目标测试实例根目录运行。

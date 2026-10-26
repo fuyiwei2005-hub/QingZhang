@@ -1,3 +1,4 @@
+import { userCategories } from "../../../lib/user-categories";
 import { and, desc, eq, like, sql } from "drizzle-orm";
 import { env } from "cloudflare:workers";
 import { getDb } from "../../../db";
@@ -51,7 +52,7 @@ export async function PATCH(request: Request) {
  const db = getDb(); const [item] = await db.select().from(lifeItems).where(and(eq(lifeItems.id,body.id),eq(lifeItems.userId,user.id)));
  if (!item) return fail("记录不存在",404);
  if (body.action === "purchase" && item.kind === "shopping") {
-  const input = entryInput({...body,type:"expense",note:item.data.title});
+  const input = entryInput({...body,type:"expense",note:item.data.title}, await userCategories(user.id));
   if (!input) return fail("请确认实际金额、账户、分类和购买日期");
   const key = `shopping:${item.id}`;
   await env.DB!.batch([

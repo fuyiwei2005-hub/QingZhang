@@ -8,7 +8,7 @@ source, destination = map(Path, sys.argv[1:3])
 database = sqlite3.connect(source)
 database.row_factory = sqlite3.Row
 lines = ["BEGIN TRANSACTION;"]
-for table in ("users", "transactions", "notes", "user_settings", "transfers", "category_budgets", "recurring_rules", "recurring_events", "wheels", "life_items", "life_events"):
+for table in ("users", "transactions", "notes", "user_settings", "transfers", "category_budgets", "recurring_rules", "recurring_events", "wheels", "life_items", "life_events", "custom_categories"):
     rows = database.execute(f'SELECT * FROM "{table}"').fetchall()
     for row in rows:
         columns = ", ".join(f'"{column}"' for column in row.keys())

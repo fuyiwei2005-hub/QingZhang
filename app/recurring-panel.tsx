@@ -1,11 +1,13 @@
 "use client";
+import { useCategories } from "./category-context";
 import { MobileSections, MobileList } from "./mobile-layout";
 import { FormEvent, useEffect, useState } from "react";
-import { accounts, expenses, incomes, todayChina } from "../lib/ledger-domain";
+import { accounts, todayChina } from "../lib/ledger-domain";
 import { api, card, field } from "../lib/client-api";
 type Rule = { id: number; type: "expense" | "income"; amount: number; category: string; account: string; note: string; frequency: string; startDate: string; endDate: string | null; active: boolean };
 type Data = { rules: Rule[]; pending: Array<Rule & { date: string }>; pendingCount: number };
 export default function RecurringPanel({ onChange }: { onChange: () => Promise<void> }) {
+ const {expenses,incomes}=useCategories();
   const [data, setData] = useState<Data>({ rules: [], pending: [], pendingCount: 0 }); const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [message, setMessage] = useState("");
   const [draft, setDraft] = useState({ type: "expense", amount: "", category: "居住", account: "微信", note: "", frequency: "monthly", startDate: todayChina(), endDate: "" });
   const load = async () => setData(await api<Data>("/api/recurring"));

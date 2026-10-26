@@ -1,7 +1,8 @@
+import { userCategories } from "../../../lib/user-categories";
 import { eq } from "drizzle-orm";
 import { getDb } from "../../../db";
 import { categoryBudgets } from "../../../db/schema";
-import { expenses, validAmount } from "../../../lib/ledger-domain";
+import { validAmount } from "../../../lib/ledger-domain";
 import { getAppUser } from "../../auth";
 export async function GET() {
   const user = await getAppUser(); if (!user) return Response.json({ error: "请先登录" }, { status: 401 });
@@ -10,6 +11,7 @@ export async function GET() {
 }
 export async function PUT(request: Request) {
   const user = await getAppUser(); if (!user) return Response.json({ error: "请先登录" }, { status: 401 });
+  const {expenses}=await userCategories(user.id);
   const body = await request.json().catch(() => null) as { budgets?: Record<string, number> } | null;
   if (!body?.budgets || Array.isArray(body.budgets) || typeof body.budgets !== "object" || Object.entries(body.budgets).some(([name, amount]) => !expenses.includes(name) || !validAmount(amount))) return Response.json({ error: "分类预算格式无效；留空表示不设置" }, { status: 400 });
   const db = getDb();

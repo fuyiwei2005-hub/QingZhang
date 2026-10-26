@@ -50,6 +50,13 @@
       "when": 1792982654628,
       "tag": "0006_life_tools",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1792993790157,
+      "tag": "0007_custom_categories",
+      "breakpoints": true
     }
   ]
 }
