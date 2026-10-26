@@ -339,3 +339,55 @@ body { font-family: "Inter", "SF Pro Display", "PingFang SC", "Microsoft YaHei",
 @media(max-width:767px) { .life-tabs { grid-template-columns:repeat(2,minmax(0,1fr)); } .life-tabs button { padding:10px 6px; font-size:13px; } .life-dialog { padding:20px; } }
 
 .home-shortcuts { row-gap: 16px; }
+
+/* Compact daily workflow: shared surfaces, home, navigation and search. */
+.ledger-shell .surface-card { box-shadow: 0 2px 10px #213e2905; }
+.ledger-shell .surface-card:hover { box-shadow: 0 2px 10px #213e2905; }
+.ledger-shell button:focus-visible, .ledger-shell summary:focus-visible { outline: 2px solid #398259; outline-offset: 3px; }
+.home-content { padding-top: 24px; }
+.home-dashboard { max-width: 880px; margin: 0 auto; }
+.ledger-content .home-dashboard .home-summary { margin: 0 !important; padding: 28px !important; border-radius: 24px; box-shadow: none; }
+.home-dashboard .home-amount { font-size: clamp(34px,5vw,52px); letter-spacing: -.04em; }
+.home-dashboard .home-record { min-height: 48px; border-radius: 14px; box-shadow: none; }
+.shortcut-section { padding: 4px 4px 12px; }
+.shortcut-section .home-shortcuts { margin: 8px 0 0 !important; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; }
+.shortcut-section .home-shortcuts button { min-height: 72px; font-size: 12px; }
+.shortcut-section .home-shortcuts button span { width: 42px; height: 42px; border-radius: 14px; background: #e9f0e8; }
+.shortcut-editor { margin-top: 14px; padding: 14px; background: white; border: 1px solid #e0e7dd; border-radius: 16px; }
+.shortcut-editor button[aria-pressed] { padding: 10px 12px; border: 1px solid #e0e7dd; border-radius: 10px; font-size: 12px; }
+.shortcut-editor button[aria-pressed="true"] { background: #e5f0e5; border-color: #7ba383; }
+.shortcut-editor button:disabled { opacity: .4; }
+.home-stat-link { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; color: #50755a; font-size: 13px; }
+.hub-list { border: 1px solid #e1e8df; border-radius: 22px; background: white; overflow: hidden; }
+.hub-list > button { display: flex; align-items: center; gap: 14px; padding: 22px; width: 100%; text-align: left; }
+.hub-list > button + button { border-top: 1px solid #edf1ea; }
+.hub-list > button:hover { background: #f7faf5; }
+.hub-list > button > span:nth-child(2) { flex: 1; min-width: 0; }
+.hub-list strong { display: block; font-size: 15px; font-weight: 600; }
+.hub-list small { display: block; margin-top: 4px; color: #7b8b7a; line-height: 1.6; }
+.hub-icon { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border-radius: 14px; background: #edf4e9; color: #41734c; }
+.profile-heading { display: flex; align-items: center; gap: 16px; padding: 16px 4px; }
+.profile-heading > span { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 20px; background: #dcebdd; font-size: 23px; color: #245b3c; }
+.profile-heading > div { min-width: 0; }
+.profile-heading h2 { font-size: 20px; font-weight: 600; }
+.profile-heading p { margin: 3px 0 6px; font-size: 12px; color: #758575; overflow-wrap: anywhere; }
+.search-toolbar { border: 1px solid #e0e7dc; border-radius: 20px; padding: 16px; background: #fff; }
+.search-line { display: flex; gap: 10px; }
+.search-line input { min-width: 0; flex: 1; height: 44px; border-radius: 12px; background: #f4f7f1; padding: 0 14px; font-size: 14px; }
+.search-line > button { padding: 0 14px; border: 1px solid #dbe5d7; border-radius: 12px; font-size: 13px; white-space: nowrap; }
+.search-line > button[aria-expanded="true"] { background: #eaf2e6; }
+.search-summary { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; font-size: 12px; color: #7a8978; }
+.search-summary button { color: #286a45; }
+.filter-fields { margin-top: 16px; padding-top: 16px; border-top: 1px solid #e6ece1; }
+.filter-done { margin-top: 16px; padding: 11px 20px; background: #245b3c; color: white; border-radius: 12px; font-size: 13px; }
+.filter-done:disabled { opacity: .4; }
+@media(max-width:767px) {
+ .ledger-content .home-dashboard .home-summary { padding: 20px !important; }
+ .home-dashboard .home-summary .my-4 { margin: 10px 0 14px; }
+ .home-dashboard .home-summary .pb-6 { padding-bottom: 16px; }
+ .home-dashboard .home-record { margin-top: 16px; }
+ .hub-list > button { padding: 18px 16px; gap: 12px; }
+ .search-toolbar { padding: 12px; }
+ .ledger-bottom-nav button { min-width: 44px; min-height: 44px; }
+ .ledger-header .ledger-primary-button { display: none; }
+}
