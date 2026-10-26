@@ -27,6 +27,9 @@ with sqlite3.connect(f"file:{source.as_posix()}?mode=ro", uri=True) as snapshot:
     tables = {row[0] for row in snapshot.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     if not {"users", "transactions", "notes", "sessions", "user_settings", "transfers", "category_budgets", "recurring_rules", "recurring_events", "wheels", "life_items", "life_events", "custom_categories"}.issubset(tables):
         raise RuntimeError("Snapshot schema is incompatible with this version")
+    columns = {row[1] for row in snapshot.execute("PRAGMA table_info(custom_categories)")}
+    if not {"hidden", "position"}.issubset(columns):
+        raise RuntimeError("Snapshot predates category preferences; migrate a copy before restoring")
     print("Pre-restore snapshot:", helpers["backup"](target, args.backup_directory, "before-restore"))
     with sqlite3.connect(target, timeout=30) as active:
         snapshot.backup(active)

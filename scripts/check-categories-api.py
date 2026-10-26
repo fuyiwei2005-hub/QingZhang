@@ -56,6 +56,18 @@ try:
   assert a.call("POST","/api/recurring",rule)[0]==201
   assert b.call("POST","/api/recurring",rule)[0]==400
  assert {r["category"] for r in a.call("GET","/api/transactions")[1]["transactions"]}=={"宠物护理","稿费"}
+ for kind,key in [("expense","expenses"),("income","incomes"),("account","accounts")]:
+  before=a.call("GET","/api/categories")[1]
+  order=list(reversed(before[key]));hide=order[:1]
+  status,result=a.call("PATCH","/api/categories",{"type":kind,"order":order,"hidden":hide})
+  assert status==200,(status,result)
+  assert result[key]==order and result["hidden"][kind]==hide
+  assert a.call("GET","/api/categories")[1]["hidden"][kind]==hide
+  assert b.call("GET","/api/categories")[1]["hidden"][kind]==[]
+  assert a.call("PATCH","/api/categories",{"type":kind,"order":order,"hidden":order})[0]==400
+  assert a.call("PATCH","/api/categories",{"type":kind,"order":["invalid"],"hidden":[]})[0]==400
+  assert a.call("PATCH","/api/categories",{"type":kind,"order":order,"hidden":[]})[0]==200
+ assert len(a.call("GET","/api/transactions")[1]["transactions"])==2
  print("PASS: persistent income/expense categories, isolation, duplicate races, budgets, transactions and recurring rules")
 finally:
  files=[p for p in Path(".wrangler/state/v3/d1/miniflare-D1DatabaseObject").glob("*.sqlite") if p.name!="metadata.sqlite"]

@@ -41,6 +41,7 @@ node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1
 5. `0005_saved_wheels.sql`
 6. `0006_life_tools.sql`
 7. `0007_custom_categories.sql`
+8. `0008_category_preferences.sql`
 
 然后运行：
 

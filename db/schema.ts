@@ -103,4 +103,6 @@ export const customCategories = sqliteTable("custom_categories", {
  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
  type: text("type", {enum:["expense","income","account"]}).notNull(),
  name: text("name").notNull(),
+ hidden: integer("hidden", {mode:"boolean"}).notNull().default(false),
+ position: integer("position").notNull().default(1000),
 }, t => [uniqueIndex("custom_categories_unique").on(t.userId,t.type,t.name)]);

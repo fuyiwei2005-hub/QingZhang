@@ -1,5 +1,5 @@
 "use client";
-import { useCategories } from "./category-context";
+import { useCategories, categoryOptions } from "./category-context";
 import { MobileSections, MobileList } from "./mobile-layout";
 import { FormEvent, useEffect, useState } from "react";
 import { todayChina } from "../lib/ledger-domain";
@@ -7,9 +7,10 @@ import { api, card, field } from "../lib/client-api";
 type Rule = { id: number; type: "expense" | "income"; amount: number; category: string; account: string; note: string; frequency: string; startDate: string; endDate: string | null; active: boolean };
 type Data = { rules: Rule[]; pending: Array<Rule & { date: string }>; pendingCount: number };
 export default function RecurringPanel({ onChange }: { onChange: () => Promise<void> }) {
- const {expenses,incomes,accounts}=useCategories();
+ const custom=useCategories(); const expenses=categoryOptions(custom,"expense"), incomes=categoryOptions(custom,"income"), accounts=categoryOptions(custom,"account");
   const [data, setData] = useState<Data>({ rules: [], pending: [], pendingCount: 0 }); const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [message, setMessage] = useState("");
   const [draft, setDraft] = useState({ type: "expense", amount: "", category: "居住", account: "微信", note: "", frequency: "monthly", startDate: todayChina(), endDate: "" });
+  useEffect(()=>{setDraft(d=>({...d,account:accounts.includes(d.account)?d.account:accounts[0],category:(d.type==="income"?incomes:expenses).includes(d.category)?d.category:(d.type==="income"?incomes:expenses)[0]}));},[custom]);
   const load = async () => setData(await api<Data>("/api/recurring"));
   useEffect(() => { load().catch((e) => setError(e.message)); }, []);
   async function create(e: FormEvent) { e.preventDefault(); setBusy(true); setError(""); setMessage(""); try { await api("/api/recurring", "POST", { ...draft, amount: Number(draft.amount) }); await load(); setDraft({ ...draft, amount: "", note: "" }); setMessage("规则已保存，到期账单需确认后入账"); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } }

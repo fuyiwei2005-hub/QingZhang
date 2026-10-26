@@ -1,5 +1,5 @@
 "use client";
-import { useCategories } from "./category-context";
+import { useCategories, categoryOptions } from "./category-context";
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, Check, RefreshCw, X, ShoppingCart, CalendarDays, PiggyBank, HandCoins, Gift, Activity } from "lucide-react";
 import { api, card, field } from "../lib/client-api";
@@ -12,7 +12,7 @@ const icons = {shopping:ShoppingCart,subscription:CalendarDays,goal:PiggyBank,de
 const money = (n:number) => `¥${n.toLocaleString("zh-CN",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
 const initial = ():Fields => ({title:"",note:"",group:"日用品",amount:"",date:todayChina(),frequency:"monthly",active:true,direction:"lent",person:"",yearly:false,done:false});
 export default function LifePanel({onLedgerChange,anniversaryOnly=false}:{onLedgerChange:()=>void;anniversaryOnly?:boolean}) {
- const {expenses,accounts}=useCategories();
+ const custom=useCategories(); const expenses=categoryOptions(custom,"expense"), incomes=categoryOptions(custom,"income"), accounts=categoryOptions(custom,"account");
  const [kind,setKind]=useState<LifeKind>(anniversaryOnly?"anniversary":"shopping"); const [data,setData]=useState<Data>({items:[],events:[],purchases:[]});
  const [loading,setLoading]=useState(true); const [busy,setBusy]=useState(false); const [error,setError]=useState(""); const [message,setMessage]=useState("");
  const [editor,setEditor]=useState<{item:LifeItem|null}|null>(null); const [fields,setFields]=useState<Fields>(initial);
@@ -35,7 +35,7 @@ export default function LifePanel({onLedgerChange,anniversaryOnly=false}:{onLedg
  function editData(item:LifeItem,next:LifeData) { return run(async()=>{await api("/api/life","PUT",{id:item.id,version:item.version,data:next});}); }
  function remove(item:LifeItem) {if(window.confirm("删除这条记录及其进度历史？已生成的收支账目会保留。"))void run(async()=>{await api(`/api/life?id=${item.id}`,"DELETE");});}
  function removeEvent(item:LifeItem,event:LifeEvent) {if(window.confirm("撤销这次记录？"))void run(async()=>{await api("/api/life","PATCH",{id:item.id,action:"removeEvent",eventId:event.id});});}
- function openAction(item:LifeItem,type:"purchase"|"event") {setError("");setAction({item,type,key:crypto.randomUUID()});setActivity({amount:"amount" in item.data&&item.data.amount!=null?String(item.data.amount):"",date:today,account:"微信",category:"日用",note:""});if(type==="event")setActivity(v=>({...v,amount:""}));}
+ function openAction(item:LifeItem,type:"purchase"|"event") {setError("");setAction({item,type,key:crypto.randomUUID()});setActivity({amount:"amount" in item.data&&item.data.amount!=null?String(item.data.amount):"",date:today,account:accounts[0],category:expenses.includes("日用")?"日用":expenses[0],note:""});if(type==="event")setActivity(v=>({...v,amount:""}));}
  async function submitActivity() { if(!action)return; await run(async()=>{await api("/api/life","PATCH",{id:action.item.id,action:action.type,key:action.key,...activity,amount:Number(activity.amount)});if(action.type==="purchase")onLedgerChange();setAction(null);setMessage(action.type==="purchase"?"已记入支出，同一商品不会重复记账":"进度已保存");}); }
  const items=data.items.filter(i=>i.kind===kind&&(kind!=="shopping"||!group||i.data.kind==="shopping"&&i.data.group===group));
  const reminders=data.items.filter(i=>anniversaryOnly?i.kind==="anniversary":i.kind!=="anniversary").flatMap(item=>{const d=item.data;let date="";if(d.kind==="subscription"&&d.active)date=nextBill(item,data.events);if(d.kind==="anniversary")date=d.yearly?annualDate(d.date,today):d.date;if(d.kind==="debt"&&d.date&&moneyTotal(data.events,item.id)<d.amount)date=d.date;if(!date)return[];const days=dayDiff(date,today);return (days<=7&&(d.kind!=="anniversary"||days>=0))?[{id:item.id,title:d.title,days,kind:item.kind}]:[];}).sort((a,b)=>a.days-b.days);
