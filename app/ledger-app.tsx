@@ -10,6 +10,7 @@ import TrashPanel from "./trash-panel";
 import SettingsPanel from "./account-settings";
 import NotesPanel from "./notes-panel";
 import WheelPanel from "./wheel-panel";
+import LifePanel from "./life-panel";
 import AccountManager from "./account-manager";
 import RecurringPanel from "./recurring-panel";
 import CategoryBudgetPanel from "./category-budget-panel";
@@ -19,7 +20,7 @@ type Transaction = { id: number; type: "expense" | "income"; amount: number; cat
 type Draft = Omit<Transaction, "id">;
 type PendingOperation = { key: string; method: "POST" | "PUT" | "DELETE"; id?: number; body?: Draft };
 type SyncState = "loading" | "synced" | "pending" | "offline" | "error";
-type View = "overview" | "transactions" | "stats" | "accounts" | "notes" | "settings" | "trash" | "recurring" | "wheels";
+type View = "overview" | "transactions" | "stats" | "accounts" | "notes" | "settings" | "trash" | "recurring" | "wheels" | "life";
 
 const ACCOUNTS = ["微信", "支付宝", "银行卡", "现金"];
 const EXPENSE_CATEGORIES = [
@@ -142,12 +143,12 @@ export default function LedgerApp({ user }: { user: { name: string; email: strin
     {mobileNav && <button className="fixed inset-0 z-30 bg-black/20 lg:hidden" aria-label="关闭菜单遮罩" onClick={() => setMobileNav(false)} />}
     <aside className={`ledger-sidebar fixed inset-y-0 left-0 z-40 w-64 border-r p-5 transition-transform lg:translate-x-0 ${mobileNav ? "translate-x-0" : "-translate-x-full"}`}>
       <div className="mb-10 flex items-center justify-between"><Brand /><button className="lg:hidden" onClick={() => setMobileNav(false)} aria-label="关闭菜单"><X size={20} /></button></div>
-      <nav className="max-h-[calc(100dvh-190px)] space-y-2 overflow-y-auto scrollbar-thin"><Nav icon={Home} label="总览" active={view === "overview"} onClick={() => navigate("overview")} /><Nav icon={WalletCards} label="账目明细" active={view === "transactions"} onClick={() => navigate("transactions")} /><Nav icon={BarChart3} label="统计分析" active={view === "stats"} onClick={() => navigate("stats")} /><Nav icon={Landmark} label="账户管理" active={view === "accounts"} onClick={() => navigate("accounts")} /><Nav icon={CalendarDays} label="周期账单" active={view === "recurring"} onClick={() => navigate("recurring")} /><Nav icon={FileText} label="记事本" active={view === "notes"} onClick={() => navigate("notes")} /><Nav icon={CircleDot} label="转盘抽签" active={view === "wheels"} onClick={() => navigate("wheels")} /><Nav icon={Trash2} label="回收站" active={view === "trash"} onClick={() => navigate("trash")} /><Nav icon={Settings} label="设置" active={view === "settings"} onClick={() => navigate("settings")} /></nav>
+      <nav className="max-h-[calc(100dvh-190px)] space-y-2 overflow-y-auto scrollbar-thin"><Nav icon={Home} label="总览" active={view === "overview"} onClick={() => navigate("overview")} /><Nav icon={WalletCards} label="账目明细" active={view === "transactions"} onClick={() => navigate("transactions")} /><Nav icon={BarChart3} label="统计分析" active={view === "stats"} onClick={() => navigate("stats")} /><Nav icon={Landmark} label="账户管理" active={view === "accounts"} onClick={() => navigate("accounts")} /><Nav icon={CalendarDays} label="周期账单" active={view === "recurring"} onClick={() => navigate("recurring")} /><Nav icon={FileText} label="记事本" active={view === "notes"} onClick={() => navigate("notes")} /><Nav icon={Gift} label="生活工具" active={view === "life"} onClick={() => navigate("life")} /><Nav icon={CircleDot} label="转盘抽签" active={view === "wheels"} onClick={() => navigate("wheels")} /><Nav icon={Trash2} label="回收站" active={view === "trash"} onClick={() => navigate("trash")} /><Nav icon={Settings} label="设置" active={view === "settings"} onClick={() => navigate("settings")} /></nav>
       <div className="ledger-profile absolute bottom-5 left-5 right-5 rounded-2xl border p-3"><div className="flex items-center gap-3"><div className="grid h-9 w-9 place-items-center rounded-full bg-[#dcecdf] font-semibold text-[#1e5b3a]">{user.name.slice(0, 1).toUpperCase()}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{user.name}</p><SyncLabel state={syncState} /></div><button onClick={logout} aria-label="退出登录"><LogOut size={17} /></button></div></div>
     </aside>
 
     <section className="ledger-workspace lg:pl-64">
-      <header className={`${view === "overview" ? "home-header " : ""}ledger-header sticky top-0 z-20 flex h-20 items-center justify-between border-b px-5 backdrop-blur-xl md:px-9`}><div className="flex items-center gap-3"><button className="lg:hidden" onClick={() => setMobileNav(true)} aria-label="打开菜单"><Menu /></button><div><p className="text-xs tracking-[.16em] text-[#788378]">{now.getFullYear()}年{now.getMonth() + 1}月<span className="hidden sm:inline"> · PERSONAL LEDGER</span></p><h1 className="text-lg font-semibold tracking-tight md:text-xl">{{ overview: "今天也从容记账", transactions: "账目明细", stats: "统计分析", accounts: "账户管理", notes: "记事本", wheels: "转盘抽签", recurring: "周期账单", trash: "回收站", settings: "设置" }[view]}</h1></div></div><div className="flex items-center gap-2">{view !== "overview" && view !== "settings" && view !== "notes" && view !== "trash" && view !== "recurring" && view !== "wheels" && <button onClick={() => openEditor()} className="ledger-primary-button flex shrink-0 whitespace-nowrap h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium text-white"><Plus size={18} />记一笔</button>}</div></header>
+      <header className={`${view === "overview" ? "home-header " : ""}ledger-header sticky top-0 z-20 flex h-20 items-center justify-between border-b px-5 backdrop-blur-xl md:px-9`}><div className="flex items-center gap-3"><button className="lg:hidden" onClick={() => setMobileNav(true)} aria-label="打开菜单"><Menu /></button><div><p className="text-xs tracking-[.16em] text-[#788378]">{now.getFullYear()}年{now.getMonth() + 1}月<span className="hidden sm:inline"> · PERSONAL LEDGER</span></p><h1 className="text-lg font-semibold tracking-tight md:text-xl">{{ overview: "今天也从容记账", transactions: "账目明细", stats: "统计分析", accounts: "账户管理", notes: "记事本", wheels: "转盘抽签", life: "生活工具", recurring: "周期账单", trash: "回收站", settings: "设置" }[view]}</h1></div></div><div className="flex items-center gap-2">{view !== "overview" && view !== "settings" && view !== "notes" && view !== "trash" && view !== "recurring" && view !== "wheels" && view !== "life" && <button onClick={() => openEditor()} className="ledger-primary-button flex shrink-0 whitespace-nowrap h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium text-white"><Plus size={18} />记一笔</button>}</div></header>
       <div className={`${view === "overview" ? "home-content " : ""}ledger-content mx-auto max-w-7xl space-y-6 p-5 md:p-9`}>
         {view === "overview" && <MobileSections labels={["收支", "预算", "趋势"]} className="home-mobile-pages space-y-6"><div className="home-main-page space-y-5">
         <section className="home-banner"><div><span className="home-kicker">把生活，记得清清楚楚</span><h2>青账<span>我的生活账本</span></h2><p>{now.getFullYear()} 年 {now.getMonth() + 1} 月 · 已记录 {monthRows.length} 笔收支</p></div><WalletCards className="home-banner-icon" size={120}/></section>
@@ -170,6 +171,7 @@ export default function LedgerApp({ user }: { user: { name: string; email: strin
         {view === "accounts" && <AccountManager rows={rows} />}
         {view === "notes" && <NotesPanel />}
         {view === "wheels" && <WheelPanel />}
+        {view === "life" && <LifePanel onLedgerChange={refreshRows} />}
         {view === "recurring" && <RecurringPanel onChange={refreshRows} />}
 
         {view === "trash" && <TrashPanel onRestore={refreshRows} />}

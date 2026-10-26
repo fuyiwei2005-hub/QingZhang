@@ -81,3 +81,19 @@ export const wheels = sqliteTable("wheels", {
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, t => [index("wheels_user_idx").on(t.userId)]);
+
+export const lifeItems = sqliteTable("life_items", {
+ id: integer("id").primaryKey({ autoIncrement: true }),
+ userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+ kind: text("kind").notNull(),
+ data: text("data", { mode: "json" }).$type<import("../lib/life").LifeData>().notNull(),
+ version: integer("version").notNull().default(1),
+ createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, t => [index("life_items_user_idx").on(t.userId)]);
+export const lifeEvents = sqliteTable("life_events", {
+ id: integer("id").primaryKey({ autoIncrement: true }),
+ userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+ itemId: integer("item_id").notNull().references(() => lifeItems.id, { onDelete: "cascade" }),
+ date: text("date").notNull(), amount: real("amount").notNull().default(0), note: text("note").notNull().default(""),
+ eventKey: text("event_key").notNull(),
+}, t => [uniqueIndex("life_events_key_idx").on(t.userId,t.eventKey), index("life_events_item_idx").on(t.itemId)]);

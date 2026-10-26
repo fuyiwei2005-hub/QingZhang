@@ -43,6 +43,13 @@
       "when": 1792374980897,
       "tag": "0005_saved_wheels",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1792982654628,
+      "tag": "0006_life_tools",
+      "breakpoints": true
     }
   ]
 }
