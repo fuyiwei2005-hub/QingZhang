@@ -1,0 +1,10 @@
+import assert from "node:assert/strict";
+import { build } from "esbuild";
+await build({entryPoints:["lib/transaction-selection.ts"],bundle:true,platform:"node",format:"esm",outfile:".deploy/selection-check.mjs"});
+const {selectedTotals}=await import("../.deploy/selection-check.mjs");
+const rows=[{id:1,type:"income",amount:100},{id:2,type:"expense",amount:.1},{id:3,type:"expense",amount:.2},{id:-1,type:"expense",amount:20}];
+assert.deepEqual(selectedTotals(rows,new Set([1,2,3,999])),{count:3,income:100,expense:.3,balance:99.7});
+assert.deepEqual(selectedTotals(rows,new Set()),{count:0,income:0,expense:0,balance:0});
+assert.deepEqual(selectedTotals(rows.slice(1),new Set([1,2,3])),{count:2,income:0,expense:.3,balance:-.3});
+assert.deepEqual(selectedTotals([...rows,rows[0]],new Set([1,-1])),{count:2,income:100,expense:20,balance:80});
+console.log("Selection totals passed: decimals, filters/deletion, mixed types, pending records, duplicates.");
