@@ -23,6 +23,18 @@ try:
   assert status==201,(status,data)
   accounts.append((data["user"]["id"],email));clients.append(c)
  a,b=clients
+ assert a.call("POST","/api/categories",{"type":"account","name":" 储蓄卡 "})[0]==201
+ assert "储蓄卡" in a.call("GET","/api/categories")[1]["accounts"]
+ assert "储蓄卡" not in b.call("GET","/api/categories")[1]["accounts"]
+ assert a.call("POST","/api/categories",{"type":"account","name":"储蓄卡"})[0]==409
+ assert a.call("POST","/api/categories",{"type":"account","name":"微信"})[0]==409
+ transfer={"fromAccount":"微信","toAccount":"储蓄卡","amount":12.34,"date":"2026-10-26","note":"test"}
+ assert a.call("POST","/api/transfers",transfer)[0]==201
+ assert b.call("POST","/api/transfers",transfer)[0]==400
+ rule={"type":"expense","category":"餐饮","account":"储蓄卡","amount":12.34,"note":"test","startDate":"2026-10-26","frequency":"monthly"}
+ assert a.call("POST","/api/recurring",rule)[0]==201
+ assert b.call("POST","/api/recurring",rule)[0]==400
+
  assert a.call("POST","/api/categories",{"type":"expense","name":" 宠物护理 "})[0]==201
  assert a.call("POST","/api/categories",{"type":"income","name":"稿费"})[0]==201
  assert "宠物护理" in a.call("GET","/api/categories")[1]["expenses"]
@@ -51,6 +63,6 @@ finally:
  with sqlite3.connect(files[0],timeout=30) as db:
   for user_id,email in accounts:
    assert db.execute("SELECT email FROM users WHERE id=?",(user_id,)).fetchone()==(email,)
-   for table in ("custom_categories","category_budgets","recurring_rules","transactions","sessions"):db.execute("DELETE FROM "+table+" WHERE user_id=?",(user_id,))
+   for table in ("transfers","custom_categories","category_budgets","recurring_rules","transactions","sessions"):db.execute("DELETE FROM "+table+" WHERE user_id=?",(user_id,))
    db.execute("DELETE FROM users WHERE id=? AND email=?",(user_id,email))
  print("Disposable accounts cleaned up")

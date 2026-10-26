@@ -3,7 +3,7 @@ import { useCategories } from "./category-context";
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, Check, RefreshCw, X, ShoppingCart, CalendarDays, PiggyBank, HandCoins, Gift, Activity } from "lucide-react";
 import { api, card, field } from "../lib/client-api";
-import { accounts, todayChina, shiftMonth } from "../lib/ledger-domain";
+import { todayChina, shiftMonth } from "../lib/ledger-domain";
 import { annualDate, dayDiff, lifeKinds, lifeNames, moneyTotal, nextBill, type LifeData, type LifeEvent, type LifeItem, type LifeKind } from "../lib/life";
 type Purchase = {id:number; sourceKey:string; amount:number; deletedAt:string|null};
 type Data = {items:LifeItem[];events:LifeEvent[];purchases:Purchase[]};
@@ -12,7 +12,7 @@ const icons = {shopping:ShoppingCart,subscription:CalendarDays,goal:PiggyBank,de
 const money = (n:number) => `¥${n.toLocaleString("zh-CN",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
 const initial = ():Fields => ({title:"",note:"",group:"日用品",amount:"",date:todayChina(),frequency:"monthly",active:true,direction:"lent",person:"",yearly:false,done:false});
 export default function LifePanel({onLedgerChange,anniversaryOnly=false}:{onLedgerChange:()=>void;anniversaryOnly?:boolean}) {
- const {expenses}=useCategories();
+ const {expenses,accounts}=useCategories();
  const [kind,setKind]=useState<LifeKind>(anniversaryOnly?"anniversary":"shopping"); const [data,setData]=useState<Data>({items:[],events:[],purchases:[]});
  const [loading,setLoading]=useState(true); const [busy,setBusy]=useState(false); const [error,setError]=useState(""); const [message,setMessage]=useState("");
  const [editor,setEditor]=useState<{item:LifeItem|null}|null>(null); const [fields,setFields]=useState<Fields>(initial);

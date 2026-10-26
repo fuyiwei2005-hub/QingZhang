@@ -101,6 +101,6 @@ export const lifeEvents = sqliteTable("life_events", {
 export const customCategories = sqliteTable("custom_categories", {
  id: integer("id").primaryKey({ autoIncrement: true }),
  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
- type: text("type", {enum:["expense","income"]}).notNull(),
+ type: text("type", {enum:["expense","income","account"]}).notNull(),
  name: text("name").notNull(),
 }, t => [uniqueIndex("custom_categories_unique").on(t.userId,t.type,t.name)]);

@@ -1,7 +1,8 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { getDb } from "../../../db";
 import { transfers } from "../../../db/schema";
-import { accounts, validAmount, validDate } from "../../../lib/ledger-domain";
+import { userCategories } from "../../../lib/user-categories";
+import { validAmount, validDate } from "../../../lib/ledger-domain";
 import { getAppUser } from "../../auth";
 export async function GET() {
   const user = await getAppUser(); if (!user) return Response.json({ error: "请先登录" }, { status: 401 });
@@ -9,6 +10,7 @@ export async function GET() {
 }
 export async function POST(request: Request) {
   const user = await getAppUser(); if (!user) return Response.json({ error: "请先登录" }, { status: 401 });
+  const {accounts} = await userCategories(user.id);
   const body = await request.json().catch(() => null) as { fromAccount: string; toAccount: string; amount: number; date: string; note: string } | null;
   if (!body || !accounts.includes(body.fromAccount) || !accounts.includes(body.toAccount) || body.fromAccount === body.toAccount || !validAmount(body.amount) || !validDate(body.date) || typeof body.note !== "string" || body.note.length > 120) return Response.json({ error: "请核对转出账户、转入账户、日期和金额" }, { status: 400 });
   const [transfer] = await getDb().insert(transfers).values({ userId: user.id, fromAccount: body.fromAccount, toAccount: body.toAccount, amount: body.amount, occurredAt: `${body.date}T12:00:00Z`, note: body.note.trim() }).returning();
