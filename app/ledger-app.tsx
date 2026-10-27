@@ -1,12 +1,12 @@
 "use client";
 import { money } from "../lib/format-money";
-import { CategoryProvider, useCategories, AccountCreator, categoryOptions, availableCategoryValue } from "./category-context";
+import { CategoryProvider, useCategories, categoryOptions } from "./category-context";
 import { appPath } from "../lib/base-path";
 
 import { Sparkles, BarChart3, CircleDot, CalendarDays, Eye, EyeOff, ArrowUpRight, Bus, Coffee, FileText, Film, Gift, GraduationCap, HeartPulse, Home, Landmark, LogOut, Menu, MoreHorizontal, Phone, Plus, RefreshCw, Settings, Shirt, ShoppingBag, Trash2, Utensils, WalletCards, WifiOff, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { parseMoneyExpression } from "../lib/money-expression";
 import { MobileList } from "./mobile-layout";
+import Editor from "./transaction-editor";
 import AiPanel from "./ai-panel";
 import HomeShortcuts from "./home-shortcuts";
 import TransactionBrowser from "./transaction-browser";
@@ -185,21 +185,6 @@ function LedgerContent({ user }: { user: { name: string; email: string } }) {
     {aiMode && <AiPanel initialMode={aiMode} onClose={()=>setAiMode(null)} onChange={refreshRows}/>}
     {dialog && <Editor onAi={()=>{setDialog(false);setAiMode("draft");}} draft={draft} setDraft={setDraft} editing={editingId !== null} deleteConfirm={deleteConfirm} setDeleteConfirm={setDeleteConfirm} onSubmit={submit} onClose={() => setDialog(false)} onDelete={removeCurrent} />}
   </main>;
-}
-
-function Editor({ onAi,draft, setDraft, editing, deleteConfirm, setDeleteConfirm, onSubmit, onClose, onDelete }: {onAi:()=>void; draft: Draft; setDraft: (draft: Draft) => void; editing: boolean; deleteConfirm: boolean; setDeleteConfirm: (value: boolean) => void; onSubmit: (e: FormEvent, amount: number) => void; onClose: () => void; onDelete: () => void }) {
-  const custom = useCategories();
-  const names = categoryOptions(custom,draft.type,editing ? draft.category : undefined);
-  const accountNames = categoryOptions(custom,"account",editing ? draft.account : undefined);
-  useEffect(()=>{
-    if(editing || !custom.ready)return;
-    const category=availableCategoryValue(custom,draft.type,draft.category), account=availableCategoryValue(custom,"account",draft.account);
-    if(category!==draft.category || account!==draft.account)setDraft({...draft,category,account});
-  },[custom,editing,draft,setDraft]);
-  const [amountInput, setAmountInput] = useState(draft.amount ? String(draft.amount) : "");
-  const [amountError, setAmountError] = useState("");
-  const calculated = parseMoneyExpression(amountInput);
-  return <div className="fixed inset-0 z-50 grid place-items-end bg-black/25 backdrop-blur-sm sm:place-items-center sm:p-5" onMouseDown={onClose}><form onSubmit={(event) => { if(!editing && (!custom.ready || !names.includes(draft.category) || !accountNames.includes(draft.account))){event.preventDefault();setAmountError(custom.error || "分类与账户加载中，请稍后再保存");return;} const amount = parseMoneyExpression(amountInput); if (amount === null) { event.preventDefault(); setAmountError("请输入有效金额或算式，结果须大于 0 元"); return; } onSubmit(event, amount); }} onMouseDown={(e) => e.stopPropagation()} className="max-h-[92vh] w-full overflow-y-auto rounded-t-[28px] bg-white p-6 shadow-2xl sm:max-w-md sm:rounded-[28px]"><div className="mb-5 flex items-center justify-between"><h2 className="text-lg font-semibold">{editing ? "编辑账目" : "记一笔"}</h2><button type="button" onClick={onClose} aria-label="关闭"><X size={20} /></button></div><div className="mb-5 grid grid-cols-2 rounded-xl bg-[#f0f3ee] p-1">{(["expense", "income"] as const).map((type) => <button key={type} type="button" onClick={() => setDraft({ ...draft, type, category: categoryOptions(custom,type)[0] })} className={`rounded-lg py-2 text-sm ${draft.type === type ? "bg-white font-medium shadow-sm" : "text-[#7b857b]"}`}>{type === "expense" ? "支出" : "收入"}</button>)}</div>{!editing&&<button type="button" onClick={onAi} className="ai-entry"><Sparkles size={16}/>用文字或图片记账</button>}<label className="mb-1 block text-xs text-[#778177]">金额</label><div className="mb-5 flex items-center border-b border-[#dfe5dc] pb-3"><span className="text-2xl">¥</span><input autoFocus inputMode="decimal" value={amountInput} onChange={(e) => { setAmountInput(e.target.value); setAmountError(""); }} className="min-w-0 flex-1 bg-transparent px-3 text-4xl font-semibold outline-none" placeholder="例如 12.50+3.20=" /></div><p className="-mt-4 mb-4 text-xs text-[#6c8d73]">{amountError || (calculated !== null && /[+*/×÷=]/.test(amountInput) ? `计算结果：${money(calculated)}` : "支持小数及 + − × ÷ 算式，例如 12.50+3.20=")}</p>{!editing && !custom.ready && <p role="status" className="mb-3 text-xs text-[#6c8d73]">{custom.error || "正在加载分类与账户…"}</p>}<label className="mb-2 block text-xs text-[#778177]">分类</label><div className="mb-5 grid grid-cols-4 gap-2">{names.map((name) => <button type="button" key={name} onClick={() => setDraft({ ...draft, category: name })} className={`rounded-xl border p-2 text-xs ${draft.category === name ? "border-[#6c9b77] bg-[#edf5ee]" : "border-[#e4e8e1]"}`}>{name}</button>)}</div><div className="mb-5 grid grid-cols-2 gap-3"><label className="text-xs text-[#778177]">账户<select value={draft.account} onChange={(e) => setDraft({ ...draft, account: e.target.value })} className="mt-2 w-full rounded-xl border border-[#dfe5dc] bg-white px-3 py-2.5 text-sm text-[#182018]">{accountNames.map((account) => <option key={account}>{account}</option>)}</select></label><label className="text-xs text-[#778177]">日期<input type="date" value={draft.occurredAt.slice(0, 10)} onChange={(e) => setDraft({ ...draft, occurredAt: `${e.target.value}T12:00:00.000Z` })} className="mt-2 w-full rounded-xl border border-[#dfe5dc] px-3 py-2 text-sm text-[#182018]" /></label></div><AccountCreator onCreated={account => setDraft({...draft,account})}/><label className="mb-2 block text-xs text-[#778177]">备注</label><input value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} className="mb-5 w-full rounded-xl border border-[#dfe5dc] px-4 py-3 text-sm outline-none focus:border-[#6c9b77]" placeholder="这笔钱花在哪里？" />{editing && deleteConfirm ? <div className="mb-3 flex items-center justify-between rounded-xl bg-red-50 p-3 text-sm text-red-700"><span>移入回收站？之后可恢复。</span><button type="button" onClick={onDelete} className="font-semibold">移入回收站</button></div> : null}<div className="flex gap-3">{editing && <button type="button" onClick={() => setDeleteConfirm(!deleteConfirm)} className="grid h-12 w-12 place-items-center rounded-xl border border-red-200 text-red-600" aria-label="删除账目"><Trash2 size={18} /></button>}<button disabled={!editing && !custom.ready} className="flex-1 rounded-xl bg-[#1e5b3a] py-3 font-medium text-white disabled:opacity-40">{editing ? "保存修改" : "保存并同步"}</button></div></form></div>;
 }
 
 function StatsPanel({ rows: allRows, categories: definitions, budget,onAsk }: { rows: Transaction[]; categories: Array<{ name: string; color: string }>; budget: number;onAsk:()=>void }) {

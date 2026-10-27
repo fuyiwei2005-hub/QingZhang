@@ -1,0 +1,13 @@
+import assert from "node:assert/strict";
+import {build} from "esbuild";
+await build({entryPoints:["lib/client-api.ts","lib/user-errors.ts"],bundle:true,platform:"node",format:"esm",outdir:".deploy/error-check"});
+const {publicError}=await import("../.deploy/error-check/user-errors.js");const {api}=await import("../.deploy/error-check/client-api.js");
+assert.equal(publicError("Invalid JSON at position 20",502),"服务暂时不可用，请稍后重试");
+assert.equal(publicError("AI 服务密钥无效，请联系管理员",502),"AI 服务暂时不可用，请稍后再试");
+assert.equal(publicError("TypeError: /opt/qingzhang/index.js",500),"服务暂时不可用，请稍后重试");
+assert.equal(publicError("请选择记账日期",400),"请选择记账日期");
+globalThis.fetch=async()=>new Response("<html>Bad gateway</html>",{status:502});await assert.rejects(()=>api("/api/ai"),/服务暂时不可用/);
+globalThis.fetch=async()=>{throw new TypeError("fetch failed")};await assert.rejects(()=>api("/api/ai"),/暂时无法确认操作结果/);
+globalThis.fetch=async()=>Response.json({error:"JSON parse error in 数据"},{status:500});await assert.rejects(()=>api("/api/ai"),/服务暂时不可用/);
+globalThis.fetch=async()=>Response.json({ok:true});assert.deepEqual(await api("/api/ai"),{ok:true});
+console.log("Public errors, HTML responses, network interruptions and normal API responses passed");

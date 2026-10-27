@@ -1,3 +1,4 @@
+import {publicError} from "../../../lib/user-errors";
 import {env} from "cloudflare:workers";
 import {reserveAiRequest} from "../../../lib/ai-reservation";
 import {and,eq,isNull,sql} from "drizzle-orm";
@@ -12,14 +13,14 @@ import {todayChina} from "../../../lib/ledger-domain";
 import {filterTransactions,emptyFilter} from "../../../lib/transaction-filter";
 export async function GET(){
  const user=await getAppUser();if(!user)return Response.json({error:"请先登录"},{status:401});
- const c=aiConfig();return Response.json({enabled:c.enabled,model:c.model,vision:!!c.visionModel,provider:c.provider,userLimit:c.userLimit,maxRows:30});
+ const c=aiConfig();const [usage]=await getDb().select({count:sql<number>`count(*)`}).from(aiRequests).where(and(eq(aiRequests.userId,user.id),eq(aiRequests.day,todayChina())));return Response.json({enabled:c.enabled,vision:!!c.visionModel,userLimit:c.userLimit,remaining:Math.max(0,c.userLimit-Number(usage.count)),maxRows:30});
 }
 export async function POST(request:Request){
  const user=await getAppUser();if(!user)return Response.json({error:"请先登录"},{status:401});
  let body:Record<string,unknown>;try{body=await boundedJson(request,4_100_000) as Record<string,unknown>;}catch{return Response.json({error:"请求过大或格式无效"},{status:400});}
  if(!body||typeof body!=="object"||body.consent!==true||!["draft","query"].includes(String(body.mode))||typeof body.text!=="string"||body.text.length>6000||(!body.text.trim()&&!body.image)||typeof body.id!=="string"||!/^[-a-zA-Z0-9]{20,80}$/.test(body.id)||body.image!==undefined&&!validImage(body.image)||body.mode==="query"&&!!body.image)return Response.json({error:"请检查文字、图片和数据处理授权"},{status:400});
- const config=aiConfig();if(!config.enabled)return Response.json({error:"管理员尚未启用 AI 服务，普通记账可照常使用"},{status:503});
- if(body.image&&!config.visionModel)return Response.json({error:"尚未配置图片识别模型"},{status:400});
+ const config=aiConfig();if(!config.enabled)return Response.json({error:"AI 服务暂时不可用，请稍后再试"},{status:503});
+ if(body.image&&!config.visionModel)return Response.json({error:"图片识别暂时不可用，请先使用文字记账"},{status:400});
  const db=getDb();await db.delete(aiRequests).where(sql`created_at < ${new Date(Date.now()-7*86400000).toISOString()}`);const [previous]=await db.select().from(aiRequests).where(and(eq(aiRequests.id,body.id),eq(aiRequests.userId,user.id)));
  if(previous){return previous.result?Response.json(previous.result):Response.json({error:"此请求正在处理或已失败，请稍后重新发起"},{status:409});}
  const day=todayChina(),now=new Date().toISOString(),activeSince=new Date(Date.now()-75000).toISOString();
@@ -43,5 +44,5 @@ export async function POST(request:Request){
   }
   await db.update(aiRequests).set({status:body.mode==="draft"?"ready":"query",result}).where(and(eq(aiRequests.id,body.id),eq(aiRequests.userId,user.id)));
   return Response.json(result);
- }catch(error){await db.update(aiRequests).set({status:"failed"}).where(and(eq(aiRequests.id,body.id),eq(aiRequests.userId,user.id)));const message=error instanceof Error?error.message:"AI 请求失败";return Response.json({error:message.includes("timeout")||message.includes("aborted")?"AI 请求超时，本次没有写入账目，请重试":message.slice(0,200)},{status:502});}
+ }catch(error){await db.update(aiRequests).set({status:"failed"}).where(and(eq(aiRequests.id,body.id),eq(aiRequests.userId,user.id)));const message=error instanceof Error?error.message:"AI 请求失败";return Response.json({error:message.includes("timeout")||message.includes("aborted")?"AI 请求超时，本次没有写入账目，请重试":publicError(message,502)},{status:502});}
 }

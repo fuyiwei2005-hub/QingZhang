@@ -20,7 +20,7 @@ try:
  for _ in range(2):
   c=Client();email="ai-test-"+uuid.uuid4().hex+"@example.invalid";status,data=c.call("POST","/api/auth/register",{"name":"AI test","email":email,"password":secrets.token_urlsafe(24)});assert status==201
   accounts.append((data["user"]["id"],email));clients.append(c)
- a,b=clients;status,config=a.call("GET","/api/ai");assert status==200 and "key" not in config
+ a,b=clients;status,config=a.call("GET","/api/ai");assert status==200 and "key" not in config and "model" not in config and "provider" not in config and 0 <= config["remaining"] <= config["userLimit"]
  payload={"id":str(uuid.uuid4()),"mode":"draft","text":"午饭12.35","consent":False}
  assert a.call("POST","/api/ai",payload)[0]==400
  assert a.call("POST","/api/ai",{**payload,"consent":True,"image":"https://example.com/image.png"})[0]==400
