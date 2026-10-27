@@ -1,0 +1,17 @@
+import {validAmount,validDate,todayChina} from "./ledger-domain";
+export const studioLists={accounts:["微信","支付宝","银行卡","现金"],incomes:["服务收入","产品销售","报销收入","其他收入"],expenses:["软件订阅","外包协作","差旅交通","设备耗材","营销推广","餐饮招待","其他成本"]};
+export type Client={id:string;name:string;contact:string;note:string;createdAt:string};
+export type Project={id:string;clientId:string|null;title:string;description:string;contractCents:number;dueDate:string|null;status:"active"|"delivered"|"archived";createdAt:string};
+export type Stage={id:string;projectId:string;title:string;amountCents:number;dueDate:string|null;createdAt:string};
+export type Entry={id:string;projectId:string|null;stageId:string|null;type:"income"|"expense";amountCents:number;date:string;category:string;account:string;note:string;deletedAt:string|null;createdAt:string};
+export type Task={id:string;projectId:string;title:string;dueDate:string|null;done:boolean;createdAt:string};
+export type StudioData={clients:Client[];projects:Project[];stages:Stage[];entries:Entry[];tasks:Task[]};
+export const emptyStudio:StudioData={clients:[],projects:[],stages:[],entries:[],tasks:[]};
+export function text(value:unknown,max:number,required=false){if(typeof value!=="string"||value.trim().length>max||required&&!value.trim()||/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(value))throw new Error("请检查填写内容和长度");return value.trim();}
+export function cents(value:unknown){if(!validAmount(value))throw new Error("金额须大于0，最多保留两位小数");return Math.round(value*100);}
+export function date(value:unknown,required=false){if(!value&&!required)return null;if(!validDate(value))throw new Error("请选择有效日期");return value;}
+export function id(value:unknown){if(typeof value!=="string"||!/^[-a-zA-Z0-9]{8,80}$/.test(value))throw new Error("无效记录，请刷新后重试");return value;}
+export function stagePaid(data:StudioData,stageId:string){return data.entries.filter(e=>!e.deletedAt&&e.type==="income"&&e.stageId===stageId).reduce((s,e)=>s+e.amountCents,0);}
+export function projectNumbers(data:StudioData,projectId:string){const project=data.projects.find(p=>p.id===projectId);const rows=data.entries.filter(e=>!e.deletedAt&&e.projectId===projectId);const income=rows.filter(e=>e.type==="income").reduce((s,e)=>s+e.amountCents,0),expense=rows.filter(e=>e.type==="expense").reduce((s,e)=>s+e.amountCents,0);return {income,expense,balance:income-expense,remaining:Math.max(0,(project?.contractCents||0)-income),planned:data.stages.filter(s=>s.projectId===projectId).reduce((n,s)=>n+s.amountCents,0)};}
+export function studioSummary(data:StudioData,month=todayChina().slice(0,7)){const entries=data.entries.filter(e=>!e.deletedAt&&e.date.startsWith(month));const income=entries.filter(e=>e.type==="income").reduce((s,e)=>s+e.amountCents,0),expense=entries.filter(e=>e.type==="expense").reduce((s,e)=>s+e.amountCents,0);const receivables=data.stages.map(s=>({...s,paid:stagePaid(data,s.id),remaining:Math.max(0,s.amountCents-stagePaid(data,s.id))})).filter(s=>s.remaining>0);return {income,expense,balance:income-expense,remaining:data.projects.reduce((s,p)=>s+projectNumbers(data,p.id).remaining,0),overdue:receivables.filter(s=>s.dueDate&&s.dueDate<todayChina()).reduce((n,s)=>n+s.remaining,0),receivables};}
+export function moneyCents(value:number){return new Intl.NumberFormat("zh-CN",{style:"currency",currency:"CNY",minimumFractionDigits:2,maximumFractionDigits:2}).format(value/100);}

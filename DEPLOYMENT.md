@@ -71,3 +71,7 @@ ssh -t root@47.117.66.214 "cd /opt/qingzhang && python3 scripts/configure-ai.py 
 Nginx 的 `/qingzhang/` location 需允许至少5MB请求并设置75秒以上读取超时。其他站点保持原配置。
 
 检查：`node scripts/check-ai.mjs`（模型请求使用模拟响应）；`python3 scripts/check-ai-api.py --base-url https://47.117.66.214/qingzhang`（仅临时账号，不发起模型调用）。真实识别需配置密钥后用测试账目验收。
+
+## Studio 经营工作台
+
+独立入口为 `/qingzhang/studio`，沿用已有 Nginx `/qingzhang/` 代理，无需新增域名或修改其他站点。升级前备份数据库，执行 `drizzle/0010_studio_business.sql`，再构建并重启服务。新版使用五张 `studio_*` 业务表，账号和 AI 配额与原站共用。完整 SQLite 备份包括这些表；SQL 导出工具也包含经营数据。恢复旧快照前须先在快照副本上补齐迁移，不能直接覆盖当前数据库。

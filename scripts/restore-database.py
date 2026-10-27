@@ -25,7 +25,7 @@ with sqlite3.connect(f"file:{source.as_posix()}?mode=ro", uri=True) as snapshot:
     if snapshot.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
         raise RuntimeError("Snapshot is corrupt")
     tables = {row[0] for row in snapshot.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-    if not {"users", "transactions", "notes", "sessions", "user_settings", "transfers", "category_budgets", "recurring_rules", "recurring_events", "wheels", "life_items", "life_events", "custom_categories", "ai_requests"}.issubset(tables):
+    if not {"users", "transactions", "notes", "sessions", "user_settings", "transfers", "category_budgets", "recurring_rules", "recurring_events", "wheels", "life_items", "life_events", "custom_categories", "ai_requests", "studio_clients", "studio_projects", "studio_stages", "studio_entries", "studio_tasks"}.issubset(tables):
         raise RuntimeError("Snapshot schema is incompatible with this version")
     columns = {row[1] for row in snapshot.execute("PRAGMA table_info(custom_categories)")}
     if not {"hidden", "position"}.issubset(columns):

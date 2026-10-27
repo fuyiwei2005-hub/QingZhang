@@ -1,0 +1,5 @@
+import type {Metadata} from "next";
+import {appPath} from "../../lib/base-path";
+import "./studio.css";
+export const metadata:Metadata={title:"青账 Studio｜把一个人的事业，经营清楚",description:"面向自由职业者与学生创业团队的项目收支、分期回款与AI经营助手。",manifest:appPath("/studio/manifest.webmanifest"),icons:{icon:appPath("/studio-mark.svg")}};
+export default function Layout({children}:{children:React.ReactNode}){return children;}

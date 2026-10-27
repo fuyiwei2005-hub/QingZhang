@@ -2,6 +2,8 @@
 
 支持手机和电脑的个人记账应用，同一账号同步收支、预算、账户与笔记。
 
+新增 **青账 Studio**（`/studio`）：面向自由职业者和学生创业团队的项目经营工作台。客户、项目、分期回款、实际收支、交付待办与 AI 经营问账形成完整流程。经营记录使用独立的 `studio_*` 数据表，复用原账号登录，原个人账本不受影响。详细说明见 [STUDIO.md](STUDIO.md)。
+
 ## 功能
 
 - 注册登录、账号数据隔离。
@@ -29,7 +31,7 @@ npm ci
 npm run build
 ```
 
-首次启动前，按顺序执行 drizzle 中的八个 SQL 文件，每个只执行一次。例如：
+首次启动前，按顺序执行 drizzle 中的全部 SQL 文件，每个只执行一次。例如：
 
 ```sh
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_green_ledger.sql
@@ -107,3 +109,5 @@ API 检查脚本会创建临时账号，运行前阅读脚本并使用测试数�
 设置 → 分类中，可分别添加收入、支出分类（1～20 字，同类型不能重名）。分类长期保存在账号中，在记账、筛选、统计、分类预算、周期账单和购物记账中可用。切回页面时自动刷新账号分类。
 
 验证脚本：python scripts/check-categories-api.py --base-url http://127.0.0.1:5175，在目标测试实例根目录运行。
+
+Studio 新版另需在已有迁移之后执行 `drizzle/0010_studio_business.sql`，每个数据库仅执行一次。

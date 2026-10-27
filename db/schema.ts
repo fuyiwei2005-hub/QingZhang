@@ -112,3 +112,5 @@ export const aiRequests = sqliteTable("ai_requests", {
  day:text("day").notNull(),status:text("status").notNull(),createdAt:text("created_at").notNull(),
  result:text("result",{mode:"json"}).$type<unknown>(),
 },t=>[index("ai_requests_user_day_idx").on(t.userId,t.day),index("ai_requests_day_idx").on(t.day)]);
+
+export * from "./studio-schema";
