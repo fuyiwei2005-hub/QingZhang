@@ -60,6 +60,8 @@ AI 默认关闭。使用官方 DeepSeek 兼容 Chat Completions 接口，文字�
 ssh -t root@47.117.66.214 "cd /opt/qingzhang && python3 scripts/configure-ai.py && systemctl restart qingzhang"
 ```
 
+服务需使用 `deployment/qingzhang-ai-start.conf` 作为 `/etc/systemd/system/qingzhang.service.d/ai-start.conf` 的启动覆盖配置（`systemctl daemon-reload` 后生效），保留原服务其他限制。
+
 脚本将密钥存入 `/etc/qingzhang/ai.env`（服务用户可读，权限600）。启动脚本通过 Wrangler `--env-file` 读取，重新构建后仍保留。不要把密钥放在网页、Git 或终端参数中。可通过文件中的 `AI_ENABLED=false` 停用，修改后重启服务。
 
 默认每用户每日20次、全站每日200次，每人同时1次，全站同时3次，单次输出最多6000 tokens、文本6000字、图片3MB、最多30笔。失败请求也占用尝试次数，防止无限重试产生费用。实际账单以 DeepSeek 为准，服务商控制台还应配置余额/预算限制。24小时后草稿不可确认，7天前的请求记录在下一次AI请求时清理；数据库备份仍按30天保留。
