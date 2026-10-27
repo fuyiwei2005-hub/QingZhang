@@ -31,3 +31,8 @@
 @media(prefers-reduced-motion:reduce){.st-shell *,.st-landing *,.st-modal-overlay *{animation:none!important;transition:none!important}}
 
 @media(max-width:380px){.st-metric>strong{font-size:clamp(18px,5.8vw,22px);white-space:nowrap}.st-metric{padding:14px 12px}.st-metric-top{font-size:10px;gap:3px}.st-metric-symbol{width:22px;height:22px}.st-hero-copy>.st-eyebrow{display:none}.st-hero-greeting{margin-top:32px!important}.st-hero-copy h2{font-size:26px}.st-hero-context button{font-size:8px;padding:5px 6px;gap:4px}.st-hero-context{gap:5px}.st-hero-context b{font-size:11px}}
+/* Brand signature and a focused overview: indicators and trend only. */
+.st-brand strong{display:flex;align-items:baseline;gap:8px}.st-brand b{font-size:10px!important;letter-spacing:.12em;font-weight:500!important}.st-sidebar .st-brand b{color:#cabd97}.st-overview-hero{min-height:204px}.st-hero-copy{max-width:72%}.st-overview-chart .st-cash-chart{height:255px;padding-top:26px}.st-overview-chart .st-chart-bars{height:202px;gap:10px}.st-overview-chart .st-chart-bars>span{width:32px}.st-overview-chart .st-chart-note{justify-content:flex-start}.st-overview-chart .st-panel-heading h3{font-size:17px}
+@media(min-width:1400px){.st-overview-hero{min-height:212px}}
+@media(max-width:1200px){.st-overview-hero{min-height:220px}}
+@media(max-width:640px){.st-overview-hero{min-height:228px}.st-hero-copy{max-width:100%}.st-overview-chart .st-cash-chart{height:192px}.st-overview-chart .st-chart-bars{height:137px;gap:6px}.st-overview-chart .st-chart-bars>span{width:23px}.st-overview-chart .st-panel-heading h3{font-size:15px}}
