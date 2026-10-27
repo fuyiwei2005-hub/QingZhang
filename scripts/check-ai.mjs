@@ -21,8 +21,8 @@ await assert.rejects(()=>boundedJson(new Request("http://localhost",{method:"POS
 await build({entryPoints:["lib/ai-provider.ts"],bundle:true,platform:"node",format:"esm",outfile:".deploy/ai-provider-check.mjs",plugins:[{name:"bindings",setup(b){b.onResolve({filter:/^cloudflare:workers$/},()=>({path:"env",namespace:"mock"}));b.onLoad({filter:/.*/,namespace:"mock"},()=>({contents:'export const env=globalThis.__aiTestEnv;',loader:"js"}));}}]});
 globalThis.__aiTestEnv={AI_ENABLED:"true",AI_API_KEY:"test-only-key",AI_BASE_URL:"https://api.deepseek.com",AI_MODEL:"deepseek-v4-pro",AI_VISION_MODEL:"deepseek-flash"};
 const {askModel,aiConfig}=await import("../.deploy/ai-provider-check.mjs");let sent;
-globalThis.fetch=async(url,options)=>{sent={url,...JSON.parse(options.body)};return Response.json({choices:[{finish_reason:"stop",message:{content:JSON.stringify({rows:[row]})}}]});};
-assert.equal(aiConfig().enabled,true);assert.deepEqual(await askModel("draft","午饭12.35",undefined,lists),{rows:[row]});assert.equal(sent.model,"deepseek-v4-pro");assert.equal(sent.stream,false);assert.equal(sent.max_tokens,6000);
+globalThis.fetch=async(url,options)=>{sent={url,redirect:options.redirect,...JSON.parse(options.body)};return Response.json({choices:[{finish_reason:"stop",message:{content:JSON.stringify({rows:[row]})}}]});};
+assert.equal(aiConfig().enabled,true);assert.deepEqual(await askModel("draft","午饭12.35",undefined,lists),{rows:[row]});assert.equal(sent.model,"deepseek-v4-pro");assert.equal(sent.redirect,"manual");assert.equal(sent.stream,false);assert.equal(sent.max_tokens,6000);
 await askModel("draft","识图","data:image/png;base64,xxx",lists);assert.equal(sent.model,"deepseek-flash");
 globalThis.fetch=async()=>Response.json({choices:[{finish_reason:"length",message:{content:'{"rows":['}}]});await assert.rejects(()=>askModel("draft","x",undefined,lists),/未完成/);
 globalThis.fetch=async()=>new Response("secret upstream error",{status:401});await assert.rejects(()=>askModel("draft","x",undefined,lists),/密钥无效/);
