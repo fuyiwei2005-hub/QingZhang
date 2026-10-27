@@ -1,19 +1,24 @@
 "use client";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { expenses, incomes, accounts } from "../lib/ledger-domain";
 import { api, field } from "../lib/client-api";
-type Kind="expense"|"income"|"account";
-type Categories={accounts:string[];expenses:string[];incomes:string[];hidden?:Record<Kind,string[]>};
-const Context=createContext<Categories & {manage:(type:Kind,order:string[],hidden:string[])=>Promise<void>;error:string;add:(type:string,name:string)=>Promise<void>}>({expenses,incomes,accounts,manage:async()=>{},error:"",add:async()=>{}});
-export function CategoryProvider({children}:{children:ReactNode}) {
- const [data,setData]=useState<Categories>({expenses,incomes,accounts});const [error,setError]=useState("");
- useEffect(()=>{let alive=true;const load=()=>api<Categories>("/api/categories").then(v=>{if(alive){setData(v);setError("")}}).catch(()=>{if(alive)setError("自定义分类暂未加载，请联网后重新打开页面")});void load();window.addEventListener("focus",load);window.addEventListener("online",load);return()=>{alive=false;window.removeEventListener("focus",load);window.removeEventListener("online",load)};},[]);
- async function add(type:string,name:string){const next=await api<Categories>("/api/categories","POST",{type,name});setData(next);setError("");}
- async function manage(type:Kind,order:string[],hidden:string[]){const next=await api<Categories>("/api/categories","PATCH",{type,order,hidden});setData(next);}
- return <Context.Provider value={{...data,error,add,manage}}>{children}</Context.Provider>;
+import { createCategoryRequestGate, isCategoryLists, type CategoryKind as Kind, type CategoryLists as Categories } from "../lib/category-options";
+export { categoryOptions, availableCategoryValue } from "../lib/category-options";
+const Context=createContext<Categories & {ready:boolean;manage:(type:Kind,order:string[],hidden:string[])=>Promise<void>;error:string;add:(type:string,name:string)=>Promise<void>}>({expenses,incomes,accounts,ready:false,manage:async()=>{},error:"",add:async()=>{}});
+export function CategoryProvider({children,userKey}:{children:ReactNode;userKey:string}) {
+ const [data,setData]=useState<Categories>({expenses,incomes,accounts});const [error,setError]=useState("");const [ready,setReady]=useState(false);
+ const mounted=useRef(false);const requests=useRef(createCategoryRequestGate());
+ const cacheKey=`qingzhang.categories.v1:${userKey}`;
+ const accept=useCallback((next:Categories)=>{if(!isCategoryLists(next))throw new Error("分类数据格式无效，请刷新后重试");setData(next);setError("");setReady(true);try{localStorage.setItem(cacheKey,JSON.stringify(next));}catch{}},[cacheKey]);
+ const load=useCallback(async()=>{const request=requests.current.read();if(request===null)return;try{const next=await api<Categories>("/api/categories");if(mounted.current&&requests.current.current(request))accept(next);}catch{if(mounted.current&&requests.current.current(request))setError("分类与账户暂未同步，联网后自动重试");}},[accept]);
+ useEffect(()=>{mounted.current=true;setData({expenses,incomes,accounts});setReady(false);setError("");try{const cached:unknown=JSON.parse(localStorage.getItem(cacheKey)||"null");if(isCategoryLists(cached)){setData(cached);setReady(true);}}catch{}void load();const visible=()=>{if(!document.hidden)void load();};window.addEventListener("focus",load);window.addEventListener("online",load);document.addEventListener("visibilitychange",visible);return()=>{mounted.current=false;requests.current.invalidate();window.removeEventListener("focus",load);window.removeEventListener("online",load);document.removeEventListener("visibilitychange",visible);};},[load,cacheKey]);
+ const write=useCallback(async(method:"POST"|"PATCH",body:unknown)=>{const request=requests.current.write();try{const next=await api<Categories>("/api/categories",method,body);if(mounted.current&&requests.current.current(request))accept(next);}finally{requests.current.finishWrite();}},[accept]);
+ const add=useCallback((type:string,name:string)=>write("POST",{type,name}),[write]);
+ const manage=useCallback((type:Kind,order:string[],hidden:string[])=>write("PATCH",{type,order,hidden}),[write]);
+ const value=useMemo(()=>({...data,ready,error,add,manage}),[data,ready,error,add,manage]);
+ return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useCategories(){return useContext(Context);}
-export function categoryOptions(data:Categories,type:Kind,current?:string){const names=type==="account"?data.accounts:type==="income"?data.incomes:data.expenses;return names.filter(n=>n===current||!data.hidden?.[type].includes(n));}
 export function CategorySettings(){
  const data=useCategories();const [type,setType]=useState<Kind>("expense");const [name,setName]=useState("");const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
  const names=type==="account"?data.accounts:type==="income"?data.incomes:data.expenses;const hidden=data.hidden?.[type]||[];
