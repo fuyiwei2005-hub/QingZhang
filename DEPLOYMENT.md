@@ -1,77 +1,16 @@
-# 部署与数据维护
+# 独立部署与安全迁移
 
-当前架构为 Vinext Worker + Wrangler 本地 D1，通过 Nginx 提供 HTTPS。
+代码已经拆分，当前服务器仍运行原混合版本。本次不自动改变生产数据、登录或Nginx，避免正在使用的账号与记录因代码拆分丢失。
 
-## 构建与服务
+建议目标：青账 `/qingzhang/` → 独立青账服务；衡序 `/qingzhang/studio/` → 独立衡序服务。两个服务不同端口、目录、系统账号、SQLite 数据库及 AI 密钥配置。Nginx 的更具体 `/qingzhang/studio/` 与 `/qingzhang/studio` 路径须先于通用路径匹配；其他站点保持原配置。
 
-服务器项目目录 `/opt/qingzhang`，系统服务 `qingzhang.service`，运行用户 `qingzhang`。更新源码后：
+## 切换顺序
 
-```sh
-cd /opt/qingzhang
-npm ci
-QINGZHANG_BASE_PATH=/qingzhang npm run build
-chown -R qingzhang:qingzhang dist
-systemctl restart qingzhang
-systemctl is-active qingzhang
-```
+1. 先完整备份旧数据库和Nginx配置，保留可回退的原服务。短暂停止写入后，再取得最终一致性快照。
+2. 独立目录安装、构建、初始化空数据库。青账使用 `QINGZHANG_BASE_PATH=/qingzhang` 构建；衡序使用 `HENGXU_BASE_PATH=/qingzhang/studio` 构建。两边不要相互覆盖 dist。
+3. 从快照复制 users 到两个库，保留用户ID、密码哈希和盐，不复制 sessions。复制个人记录到青账库；仅复制 studio_* 到衡序库。AI 请求不迁移。校验账号数、项目数、有效记录数及按账号的金额合计。
+4. 配置独立 Cookie 和 AI。青账 Cookie 为 qingzhang_session，衡序为 hengxu_session；衡序读取 `/etc/hengxu/ai.env` 或 HENGXU_AI_ENV_FILE，青账仍使用自己的配置。不要把密钥写进代码或仓库。
+5. 启动两个独立服务，先本机验证注册、旧账号登录、隔离、记录编辑和AI，再切换Nginx的两个路径。新服务账号必须能写入各自 dist 和 .wrangler/state。
+6. 验证页面、静态文件、API、清单均落在对应路径；从此对两个数据库分别备份。旧数据库保留只读回退副本，不删除旧表。历史个人库中的 studio 表只作兼容存档，禁止通过后续迁移清除。
 
-服务启动命令为 `npm start -- --port 5176`，仅监听 `127.0.0.1`。Nginx 仅将专属 `/qingzhang/` 路径代理到该端口；保留同机其他站点和路由。
-
-首次部署需按 README 顺序执行全部迁移；升级时只应用尚未执行的迁移。修改数据库前先备份。
-
-**必须保留 `.wrangler/state/`**：其中的 SQLite 文件是实际账号和账目数据，不是可随意清理的缓存。不要将本地测试数据库覆盖到生产服务器。
-
-查看运行日志：
-
-```sh
-journalctl -u qingzhang -n 100
-```
-
-## 自动备份
-
-`deployment/` 提供 systemd 服务和定时器，每天北京时间 03:15 后五分钟内运行。备份工具生成一致性 SQLite 快照并保留最近 30 天文件。
-
-备份目录 `/var/backups/qingzhang/` 权限 700，快照权限 600。备份和数据库不上传 Git；本机快照不等于异地备份。
-
-```sh
-systemctl list-timers qingzhang-backup.timer
-journalctl -u qingzhang-backup.service -n 30
-```
-
-## 管理员恢复
-
-恢复会覆盖全库，确认快照日期和影响后停止应用再执行：
-
-```sh
-systemctl stop qingzhang
-python3 scripts/restore-database.py /var/backups/qingzhang/选定快照.sqlite --state /opt/qingzhang/.wrangler/state --backup-directory /var/backups/qingzhang --confirm
-systemctl start qingzhang
-```
-
-恢复工具校验完整性及结构，覆盖前保存当前库快照。恢复后登录会话清除，用户需重新登录；仅支持与当前版本结构兼容的快照。
-
-## AI 服务
-
-AI 默认关闭。使用官方 DeepSeek 兼容 Chat Completions 接口，文字模型 `deepseek-v4-pro`，图片模型 `deepseek-flash`；官方目前将前者路由到新版 Flash，实际模型以服务商为准。
-
-部署迁移 `0009_ai_requests.sql` 后，通过交互式隐藏输入配置密钥：
-
-```sh
-ssh -t root@47.117.66.214 "cd /opt/qingzhang && python3 scripts/configure-ai.py && systemctl restart qingzhang"
-```
-
-服务需使用 `deployment/qingzhang-ai-start.conf` 作为 `/etc/systemd/system/qingzhang.service.d/ai-start.conf` 的启动覆盖配置（`systemctl daemon-reload` 后生效），保留原服务其他限制。
-
-脚本将密钥存入 `/etc/qingzhang/ai.env`（服务用户可读，权限600）。启动脚本通过 Wrangler `--env-file` 读取，重新构建后仍保留。不要把密钥放在网页、Git 或终端参数中。可通过文件中的 `AI_ENABLED=false` 停用，修改后重启服务。
-
-默认每用户每日20次、全站每日200次，每人同时1次，全站同时3次，单次输出最多6000 tokens、文本6000字、图片3MB、最多30笔。失败请求也占用尝试次数，防止无限重试产生费用。实际账单以 DeepSeek 为准，服务商控制台还应配置余额/预算限制。24小时后草稿不可确认，7天前的请求记录在下一次AI请求时清理；数据库备份仍按30天保留。
-
-查询仅将问题、当前日期与分类/账户名称发送给模型，由网站按登录账号查询并计算。文字和图片在用户授权后发送给DeepSeek，原图不落盘；模型输出不能直接写库，必须逐条核对并确认。批次入账具有唯一来源标记，可撤销到回收站。当前查询支持一个日期范围与组合条件，比较和预测需拆成单个查询。
-
-Nginx 的 `/qingzhang/` location 需允许至少5MB请求并设置75秒以上读取超时。其他站点保持原配置。
-
-检查：`node scripts/check-ai.mjs`（模型请求使用模拟响应）；`python3 scripts/check-ai-api.py --base-url https://47.117.66.214/qingzhang`（仅临时账号，不发起模型调用）。真实识别需配置密钥后用测试账目验收。
-
-## Studio 经营工作台
-
-独立入口为 `/qingzhang/studio`，沿用已有 Nginx `/qingzhang/` 代理，无需新增域名或修改其他站点。升级前备份数据库，执行 `drizzle/0010_studio_business.sql`，再构建并重启服务。新版使用五张 `studio_*` 业务表，账号和 AI 配额与原站共用。完整 SQLite 备份包括这些表；SQL 导出工具也包含经营数据。恢复旧快照前须先在快照副本上补齐迁移，不能直接覆盖当前数据库。
+单独使用衡序时可直接在域名根路径构建，不设置 HENGXU_BASE_PATH。源码中的 API 路径与页面链接会跟随自己的基路径，不依赖原青账。

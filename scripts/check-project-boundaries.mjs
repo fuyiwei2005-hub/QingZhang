@@ -1,0 +1,8 @@
+import assert from 'node:assert/strict';
+import {readdir,readFile} from 'node:fs/promises';
+import path from 'node:path';
+const root=process.cwd();
+async function files(dir){const out=[];for(const item of await readdir(dir,{withFileTypes:true})){if(['node_modules','dist','.wrangler','.next','.deploy','.sites-runtime','.vinext'].includes(item.name))continue;const file=path.join(dir,item.name);if(item.isDirectory())out.push(...await files(file));else if(/\.(tsx?|mts|mjs)$/.test(item.name))out.push(file);}return out;}
+for(const name of ['qingzhang','hengxu']){const base=path.resolve(root,'apps',name);const pkg=JSON.parse(await readFile(path.join(base,'package.json'),'utf8'));assert.equal(pkg.name,name);for(const file of await files(base)){const source=await readFile(file,'utf8');for(const match of source.matchAll(/(?:from\s*|import\s*\()\s*["'](\.[^"']+)["']/g)){const resolved=path.resolve(path.dirname(file),match[1]);assert.ok(resolved.startsWith(base+path.sep),`Cross-project source import: ${file}: ${match[1]}`);}}}
+const q=await readFile('apps/qingzhang/db/schema.ts','utf8'),h=await readFile('apps/hengxu/db/schema.ts','utf8');assert.ok(!q.includes('studio-schema'));assert.ok(!h.includes('sqliteTable("transactions"'));assert.ok(h.includes('studio-schema'));assert.ok((await readFile('apps/qingzhang/app/auth.ts','utf8')).includes('"qingzhang_session"'));assert.ok((await readFile('apps/hengxu/app/auth.ts','utf8')).includes('"hengxu_session"'));assert.ok((await readFile('apps/hengxu/next.config.ts','utf8')).includes('HENGXU_BASE_PATH'));
+console.log('PASS: both apps own their source dependencies, auth cookies, schema and build configuration');
