@@ -5,6 +5,7 @@
 ## 功能
 
 - 注册登录、账号数据隔离。
+- AI 文字/图片记账草稿、确认入账、批次撤销及问账查询；需管理员配置 DeepSeek 密钥后启用。
 - 收支记录、小数与四则运算、组合搜索筛选、按月和周查看明细及多选收支汇总。
 - 历史收支统计、支出饼图、分类排行、月总预算与分类预算。
 - 默认与自定义账户、账户转账；收支分类和账户支持排序、隐藏，同账号同步。
@@ -44,6 +45,7 @@ node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1
 6. `0006_life_tools.sql`
 7. `0007_custom_categories.sql`
 8. `0008_category_preferences.sql`
+9. `0009_ai_requests.sql`
 
 然后运行：
 

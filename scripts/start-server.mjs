@@ -1,0 +1,12 @@
+import "./sites-env.mjs";
+import {existsSync} from "node:fs";
+import {spawn} from "node:child_process";
+import {fileURLToPath} from "node:url";
+const root=fileURLToPath(new URL("../",import.meta.url));
+const config=process.env.QINGZHANG_AI_ENV_FILE || "/etc/qingzhang/ai.env";
+const args=["--import",new URL("./sites-env.mjs",import.meta.url).href,fileURLToPath(new URL("../node_modules/wrangler/bin/wrangler.js",import.meta.url)),"dev","--config","dist/server/wrangler.json","--local","--persist-to",".wrangler/state","--ip","127.0.0.1","--inspector-port","0",...process.argv.slice(2)];
+if(existsSync(config)&&!args.includes("--env-file"))args.push("--env-file",config);
+const child=spawn(process.execPath,args,{cwd:root,stdio:"inherit"});
+for(const signal of ["SIGINT","SIGTERM"])process.on(signal,()=>child.kill(signal));
+child.on("error",error=>{console.error(error.message);process.exit(1)});
+child.on("exit",code=>process.exit(code??1));

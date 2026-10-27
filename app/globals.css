@@ -354,3 +354,14 @@ body { font-family: "Inter", "SF Pro Display", "PingFang SC", "Microsoft YaHei",
  .account-balance { font-size:18px; }
  .preference-list button { min-height:44px; }
 }
+
+.ai-entry {display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-bottom:16px;padding:12px;border:1px solid #dbe7db;border-radius:12px;background:#eef5ed;color:#2b6540;font-size:13px;}
+.ai-overlay {position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:20px;background:#122c2566;backdrop-filter:blur(4px);}
+.ai-dialog {display:flex;flex-direction:column;width:100%;max-width:720px;max-height:calc(100dvh - 40px);border-radius:24px;background:#fff;box-shadow:0 24px 90px #193a3030;overflow:hidden;}
+.ai-dialog > header {display:flex;justify-content:space-between;align-items:center;flex-shrink:0;padding:20px 24px;border-bottom:1px solid #e8eee3;}
+.ai-dialog > header button {padding:8px;}
+.ai-body {padding:24px;overflow-y:auto;overscroll-behavior:contain;}
+.ai-notice {margin-bottom:16px;padding:14px;border:1px solid #e6dfc9;border-radius:12px;background:#faf7ed;color:#887348;font-size:13px;line-height:1.8;}
+.ai-draft {padding:16px;border:1px solid #dfe8d9;border-radius:16px;}
+.ai-body input[type="checkbox"] {accent-color:#245b3c;min-width:18px;min-height:18px;}
+@media(max-width:767px){.ai-overlay{padding:0;align-items:end;}.ai-dialog{max-height:94dvh;border-radius:24px 24px 0 0;}.ai-dialog>header{padding:16px;}.ai-body{padding:16px;padding-bottom:calc(20px + env(safe-area-inset-bottom));}.ai-draft{padding:12px;}.ai-dialog button{min-height:40px;}.ai-dialog input,.ai-dialog select,.ai-dialog textarea{min-width:0;max-width:100%;}}

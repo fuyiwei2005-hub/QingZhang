@@ -106,3 +106,9 @@ export const customCategories = sqliteTable("custom_categories", {
  hidden: integer("hidden", {mode:"boolean"}).notNull().default(false),
  position: integer("position").notNull().default(1000),
 }, t => [uniqueIndex("custom_categories_unique").on(t.userId,t.type,t.name)]);
+
+export const aiRequests = sqliteTable("ai_requests", {
+ id:text("id").primaryKey(),userId:text("user_id").notNull().references(()=>users.id,{onDelete:"cascade"}),
+ day:text("day").notNull(),status:text("status").notNull(),createdAt:text("created_at").notNull(),
+ result:text("result",{mode:"json"}).$type<unknown>(),
+},t=>[index("ai_requests_user_day_idx").on(t.userId,t.day),index("ai_requests_day_idx").on(t.day)]);

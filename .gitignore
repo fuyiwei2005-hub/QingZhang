@@ -69,3 +69,8 @@ __pycache__/
 /backups/
 *.tar.gz
 *.zip
+
+# Local AI service secrets
+.dev.vars*
+.env*
+ai.env
