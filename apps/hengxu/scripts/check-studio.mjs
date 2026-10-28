@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
-await build({entryPoints:['lib/studio-domain.ts','lib/studio-demo.ts','lib/studio-ai-query.ts','lib/studio-view.ts'],bundle:true,platform:'node',format:'esm',outdir:'.deploy/studio-check',plugins:[{name:'provider',setup(b){b.onResolve({filter:/^\.\/ai-provider$/},()=>({path:'provider',namespace:'mock'}));b.onLoad({filter:/.*/,namespace:'mock'},()=>({contents:'export async function completeAiJson(system,input){globalThis.sent={system,input};return globalThis.queryResult;}',loader:'js'}));}}]});
+await build({entryPoints:['lib/studio-domain.ts','lib/studio-demo.ts','lib/studio-ai-query.ts','lib/studio-view.ts','lib/studio-weekly.ts'],bundle:true,platform:'node',format:'esm',outdir:'.deploy/studio-check',plugins:[{name:'provider',setup(b){b.onResolve({filter:/^\.\/ai-provider$/},()=>({path:'provider',namespace:'mock'}));b.onLoad({filter:/.*/,namespace:'mock'},()=>({contents:'export async function completeAiJson(system,input){globalThis.sent={system,input};return globalThis.queryResult;}',loader:'js'}));}}]});
 const {studioSummary,projectNumbers,stagePaid,cents}=await import('../.deploy/studio-check/studio-domain.js');
 const {studioDemo}=await import('../.deploy/studio-check/studio-demo.js');
 const {askStudioQuery}=await import('../.deploy/studio-check/studio-ai-query.js');
@@ -28,3 +28,15 @@ const csv=entriesCsv([{...daily[0],note:' =SUM(1,2)',amountCents:10}],data);
 assert.ok(csv.startsWith('\ufeff'));assert.equal(csv.split('\r\n').length,2);assert.ok(csv.includes('"0.10"'));assert.ok(csv.includes("' =SUM(1,2)"));
 assert.ok(!entriesCsv(daily,data).includes('品牌官网启动定金'));
 console.log('PASS: intersecting filters, deleted exclusion, visible export scope, exact decimals and spreadsheet formula protection');
+
+const {weeklyReport}=await import('../.deploy/studio-check/studio-weekly.js');
+const base={clients:[],projects:[],stages:[],tasks:[],entries:[]};
+const row={id:'test-row',projectId:null,stageId:null,type:'income',amountCents:10,date:'2026-03-01',category:'服务收入',account:'微信',note:'',deletedAt:null,createdAt:''};
+const week=weeklyReport({...base,entries:[row,{...row,id:'two',amountCents:20,date:'2026-02-28'},{...row,id:'old',amountCents:50,date:'2026-02-20'},{...row,id:'deleted',amountCents:999,deletedAt:'x'}]},'2026-03-01','','2026-03-01');
+assert.equal(week.from,'2026-02-23');assert.equal(week.totals.income,30);assert.equal(week.previous.income,50);assert.equal(week.rows.length,2);
+assert.throws(()=>weeklyReport(base,'2026-02-30','','2026-03-01'));assert.throws(()=>weeklyReport(base,'2026-03-02','','2026-03-01'));
+assert.throws(()=>weeklyReport(base,'2026-03-01','unknown','2026-03-01'));
+const scoped=weeklyReport(data,new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Shanghai'}),data.projects[0].id);
+assert.ok(scoped.rows.every(e=>e.projectId===data.projects[0].id));assert.ok(scoped.overdue.every(s=>s.projectId===data.projects[0].id));
+assert.ok(week.text.includes('并非历史周末快照'));
+console.log('PASS: weekly exact cents, month boundary, previous 7 days, deleted records, project scope and date validation');

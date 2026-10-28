@@ -21,6 +21,7 @@ files=[p for p in Path('.wrangler/state/v3/d1/miniflare-D1DatabaseObject').glob(
 accounts=[];today=datetime.now(timezone.utc).astimezone().date().isoformat()
 try:
  assert Client().call('GET','/api/studio')[0]==401
+ assert Client().call('GET','/api/studio/activity')[0]==401
  assert Client().call('POST','/api/studio',{})[0]==401
  assert Client().call('POST','/api/studio/ai',{})[0]==401
  clients=[]
@@ -79,6 +80,27 @@ try:
  before=len(data['entries']);bad={**commit,'id':batch,'stageId':stage,'rows':[{**row,'index':0,'confirmed':True},{**incoming,'index':1,'confirmed':True}]}
  assert x.call('POST','/api/studio/ai',bad)[0]==400
  assert len(x.call('GET','/api/studio')[1]['entries'])==before
+ # Audit history must follow actual writes, including atomic AI confirmations.
+ history=x.call('GET','/api/studio/activity')[1]['rows']
+ assert y.call('GET','/api/studio/activity')[1]['rows']==[]
+ assert x.call('GET','/api/studio/activity?entity=invalid')[0]==400
+ assert x.call('GET','/api/studio/activity?before=-1')[0]==400
+ assert len([r for r in history if r['recordId']==project and r['action']=='create'])==1
+ assert len([r for r in history if r['recordId']==draft+'-e0'])==1
+ assert not any(r['recordId'].startswith(batch+'-e') for r in history)
+ assert any(r['recordId']==entry and r['action']=='delete' and r['before']['amount_cents']==6010 for r in history)
+ before_count=len(history)
+ assert x.call('PATCH','/api/studio',{'op':'client','id':customer,'name':'Test client'})[0]==200
+ assert len(x.call('GET','/api/studio/activity')[1]['rows'])==before_count
+ for index in range(55):
+  assert x.call('PATCH','/api/studio',{'op':'client','id':customer,'name':'Test client '+str(index)})[0]==200
+ page=x.call('GET','/api/studio/activity?entity=client')[1]
+ assert len(page['rows'])==50 and page['next'] is not None
+ older=x.call('GET','/api/studio/activity?entity=client&before='+str(page['next']))[1]
+ assert len(older['rows'])==6 and older['next'] is None
+ assert not {r['id'] for r in page['rows']} & {r['id'] for r in older['rows']}
+ assert y.call('GET','/api/studio/activity?before='+str(page['next']))[1]['rows']==[]
+ print('PASS: private audit history, AI confirmation, rejected batch exclusion, no-op suppression and cursor pagination')
  if a.live_ai:
   status,draft_result=x.call('POST','/api/studio/ai',{'id':uid(),'mode':'draft','consent':True,'text':today+'用微信支付软件订阅12.35元。'})
   assert status==200 and draft_result['mode']=='draft' and any(r['amount']==12.35 and r['type']=='expense' for r in draft_result['rows']),(status,draft_result)
@@ -90,6 +112,6 @@ finally:
  with sqlite3.connect(files[0],timeout=30) as db:
   for user_id,email in accounts:
    assert db.execute('SELECT email FROM users WHERE id=?',(user_id,)).fetchone()==(email,)
-   for table in ('studio_tasks','studio_entries','studio_stages','studio_projects','studio_clients','ai_requests','sessions'):db.execute('DELETE FROM '+table+' WHERE user_id=?',(user_id,))
+   for table in ('studio_activity','studio_tasks','studio_entries','studio_stages','studio_projects','studio_clients','ai_requests','sessions'):db.execute('DELETE FROM '+table+' WHERE user_id=?',(user_id,))
    db.execute('DELETE FROM users WHERE id=? AND email=?',(user_id,email))
  print('Disposable Studio accounts cleaned up')

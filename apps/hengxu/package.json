@@ -13,7 +13,8 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "db:init": "node scripts/init-database.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:upgrade": "node scripts/upgrade-database.mjs"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
