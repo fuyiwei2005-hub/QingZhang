@@ -1,5 +1,7 @@
 # 衡序 HENGXU · 商务经营工作台
 
+线上地址：https://yiwei.icu/hengxu/ 。独立部署到106.15.1.208，维护说明见 [deployment/README.md](deployment/README.md)。
+
 面向自由职业者、独立开发者与学生创业团队的独立经营应用：客户、项目、分期回款、实际收支、交付清单与 AI 经营助手。经营总览只展示核心指标及趋势。
 
 ## 独立运行

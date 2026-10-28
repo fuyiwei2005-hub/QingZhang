@@ -1,0 +1,7 @@
+[Unit]
+Description=Back up Hengxu business database
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/hengxu/scripts/backup-database.py --state /opt/hengxu/.wrangler/state --output /var/backups/hengxu
+UMask=0077
