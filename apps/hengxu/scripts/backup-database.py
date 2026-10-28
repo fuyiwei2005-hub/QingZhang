@@ -2,6 +2,7 @@
 import argparse
 import os
 import sqlite3
+from contextlib import closing
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -18,11 +19,14 @@ def backup(source, folder, prefix="hengxu"):
     destination = folder / f"{prefix}-{now:%Y%m%d-%H%M%S-%f}.sqlite"
     temporary = destination.with_suffix(".pending")
     try:
-        with sqlite3.connect(f"file:{Path(source).resolve().as_posix()}?mode=ro", uri=True, timeout=30) as database:
-            with sqlite3.connect(temporary) as snapshot:
+        # Transaction contexts do not close SQLite connections. Close both handles
+        # before renaming the snapshot, including on Windows and in WAL mode.
+        with closing(sqlite3.connect(f"file:{Path(source).resolve().as_posix()}?mode=ro", uri=True, timeout=30)) as database:
+            with closing(sqlite3.connect(temporary)) as snapshot:
                 database.backup(snapshot)
                 if snapshot.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
                     raise RuntimeError("Backup integrity check failed")
+                snapshot.execute("PRAGMA journal_mode=DELETE")
         os.chmod(temporary, 0o600)
         temporary.replace(destination)
     finally:

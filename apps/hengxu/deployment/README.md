@@ -14,7 +14,7 @@
 ```sh
 cd /opt/hengxu
 python3 scripts/backup-database.py --state .wrangler/state --output /var/backups/hengxu
-npm ci --prefer-offline
+npm ci --include=dev --prefer-offline
 HENGXU_BASE_PATH=/hengxu npm run build
 chown -R hengxu:hengxu dist
 systemctl restart hengxu

@@ -43,3 +43,5 @@ npm --prefix apps/hengxu run build
 每个应用的说明和测试见其自身 README。
 
 同时启动青账5189与衡序5188后，可运行 `python scripts/check-independent-apps.py` 验证两个应用的账号、Cookie和接口隔离。
+
+衡序可独立交付到 `D:\记账制作\衡序`。运行 `python scripts/export-hengxu.py` 导出干净源码；目标必须为空，已有工作不会被覆盖。该目录与仓库中的 `apps/hengxu` 是独立副本，后续修改请明确选择一个工作目录，避免两边同时编辑。

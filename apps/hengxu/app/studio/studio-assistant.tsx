@@ -8,10 +8,11 @@ import {moneyCents as money,studioLists,studioSummary,projectNumbers,stagePaid,t
 type Draft=AiDraft&{index:number;confirmed:boolean;selected:boolean};
 type Report={scope:"cashflow"|"receivables"|"projects";from:string;to:string;projectId?:string;count:number;income?:number;expense?:number;balance?:number;total?:number;rows:unknown[]};
 type Status={enabled:boolean;vision:boolean;remaining:number;userLimit:number};
-export default function StudioAssistant({data,projectId:initialProject="",demo,onSaved,onAuth}:{data:StudioData;projectId?:string;demo:boolean;onSaved:()=>Promise<void>;onAuth:()=>void}){
+export default function StudioAssistant({data,projectId:initialProject="",demo,onSaved,onAuth,onBusyChange}:{data:StudioData;projectId?:string;demo:boolean;onSaved:()=>Promise<void>;onAuth:()=>void;onBusyChange?:(busy:boolean)=>void}){
  const [mode,setMode]=useState<"draft"|"query">("draft"),[text,setText]=useState(""),[image,setImage]=useState<string>(),[projectId,setProjectId]=useState(initialProject),[stageId,setStageId]=useState("");
  const [consent,setConsent]=useState(false),[busy,setBusy]=useState(false),[status,setStatus]=useState<Status|null>(null),[error,setError]=useState(""),[message,setMessage]=useState(""),[drafts,setDrafts]=useState<Draft[]>([]),[requestId,setRequestId]=useState(""),[expanded,setExpanded]=useState<number|null>(null),[report,setReport]=useState<Report|null>(null);
  useEffect(()=>{if(demo)return;let active=true;api<Status>("/api/ai").then(s=>{if(active)setStatus(s)}).catch(()=>{if(active)setError("暂时无法连接AI服务，请稍后重新打开")});return()=>{active=false};},[demo]);
+ useEffect(()=>{onBusyChange?.(busy);return()=>onBusyChange?.(false);},[busy,onBusyChange]);
  const stages=data.stages.filter(s=>s.projectId===projectId);const selected=drafts.filter(r=>r.selected);const requiresStage=!!projectId&&selected.some(r=>r.type==="income");const canSave=selected.length>0&&selected.every(r=>r.confirmed&&confirmedEntry(r,studioLists))&&(!requiresStage||!!stageId);
  function switchMode(next:"draft"|"query"){if(next===mode)return;if(drafts.length&&!window.confirm("切换会丢弃当前未保存的草稿，继续吗？"))return;setMode(next);setDrafts([]);setReport(null);setError("");setMessage("");}
  async function readFile(file?:File){if(!file)return;if(!["image/png","image/jpeg","image/webp"].includes(file.type)||file.size>3000000){setError("请选择3MB以内的PNG、JPEG或WebP图片");return;}const reader=new FileReader();reader.onload=()=>setImage(String(reader.result));reader.onerror=()=>setError("图片读取失败，请重试");reader.readAsDataURL(file);}

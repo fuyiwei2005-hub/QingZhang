@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
-await build({entryPoints:['lib/studio-domain.ts','lib/studio-demo.ts','lib/studio-ai-query.ts'],bundle:true,platform:'node',format:'esm',outdir:'.deploy/studio-check',plugins:[{name:'provider',setup(b){b.onResolve({filter:/^\.\/ai-provider$/},()=>({path:'provider',namespace:'mock'}));b.onLoad({filter:/.*/,namespace:'mock'},()=>({contents:'export async function completeAiJson(system,input){globalThis.sent={system,input};return globalThis.queryResult;}',loader:'js'}));}}]});
+await build({entryPoints:['lib/studio-domain.ts','lib/studio-demo.ts','lib/studio-ai-query.ts','lib/studio-view.ts'],bundle:true,platform:'node',format:'esm',outdir:'.deploy/studio-check',plugins:[{name:'provider',setup(b){b.onResolve({filter:/^\.\/ai-provider$/},()=>({path:'provider',namespace:'mock'}));b.onLoad({filter:/.*/,namespace:'mock'},()=>({contents:'export async function completeAiJson(system,input){globalThis.sent={system,input};return globalThis.queryResult;}',loader:'js'}));}}]});
 const {studioSummary,projectNumbers,stagePaid,cents}=await import('../.deploy/studio-check/studio-domain.js');
 const {studioDemo}=await import('../.deploy/studio-check/studio-demo.js');
 const {askStudioQuery}=await import('../.deploy/studio-check/studio-ai-query.js');
@@ -17,3 +17,14 @@ globalThis.queryResult={scope:'cashflow',from:'',to:'',warning:'日期不明确'
 globalThis.queryResult={scope:'projects',from:'2026-02-30',to:'2026-03-01'};await assert.rejects(()=>askStudioQuery('错误日期',data));
 globalThis.queryResult={scope:'projects',from:'',to:'',projectTitle:'虚构项目'};await assert.rejects(()=>askStudioQuery('虚构',data));
 console.log('PASS: Studio cents, actual vs contracted totals, overdue receivables, archived unpaid projects, trash exclusion, query validation and deterministic reports (model mocked)');
+
+const {filterEntries,entryTotals,entriesCsv,defaultLedgerFilters}=await import('../.deploy/studio-check/studio-view.js');
+const daily=filterEntries(data,{...defaultLedgerFilters,projectId:'daily',search:' 设计工具 '});
+assert.equal(daily.length,1);assert.equal(entryTotals(daily).expense,29800);
+assert.equal(filterEntries(data,{...defaultLedgerFilters,type:'income',projectId:'daily'}).length,0);
+assert.equal(filterEntries(data,{...defaultLedgerFilters,month:'2000-01'}).length,0);
+assert.equal(filterEntries({...data,entries:data.entries.map(e=>({...e,deletedAt:'deleted'}))},defaultLedgerFilters).length,0);
+const csv=entriesCsv([{...daily[0],note:' =SUM(1,2)',amountCents:10}],data);
+assert.ok(csv.startsWith('\ufeff'));assert.equal(csv.split('\r\n').length,2);assert.ok(csv.includes('"0.10"'));assert.ok(csv.includes("' =SUM(1,2)"));
+assert.ok(!entriesCsv(daily,data).includes('品牌官网启动定金'));
+console.log('PASS: intersecting filters, deleted exclusion, visible export scope, exact decimals and spreadsheet formula protection');
