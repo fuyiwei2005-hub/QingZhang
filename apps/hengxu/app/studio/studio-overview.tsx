@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, CalendarClock, ChevronLeft, ChevronRight, Sparkles, TrendingUp } from "lucide-react";
+import { CalendarClock, ChevronLeft, ChevronRight } from "lucide-react";
 import { shiftMonth, todayChina } from "../../lib/ledger-domain";
 import { moneyCents as money, studioSummary, type StudioData } from "../../lib/studio-domain";
 import StudioMetric from "./studio-metric";
@@ -25,10 +25,12 @@ export default function StudioOverview({ data, name, month, onMonthChange }: {
         <p>以实际收支为依据，清晰呈现资金流向与经营表现。</p>
       </div>
       <div className="st-hero-art" aria-hidden="true">
-        <div className="st-orbit orbit-one" /><div className="st-orbit orbit-two" /><div className="st-orbit orbit-three" />
-        <div className="st-orbit-core"><BriefcaseBusiness size={52} /></div>
-        <span className="st-orbit-spark spark-one"><Sparkles size={20} /></span>
-        <span className="st-orbit-spark spark-two"><TrendingUp size={21} /></span><span className="st-orbit-dot" />
+        <div className="st-art-orbit" /><div className="st-art-orbit inner" />
+        <div className="st-art-platform" />
+        <div className="st-art-pillar pillar-back"><i /><span /></div>
+        <div className="st-art-pillar pillar-middle"><i /><span /></div>
+        <div className="st-art-pillar pillar-front"><i /><span /></div>
+        <div className="st-art-seal">H<span>HENGXU</span></div>
       </div>
       <div className="st-hero-period">
         <span>经营视角 / 按月查看</span>
@@ -50,12 +52,12 @@ export default function StudioOverview({ data, name, month, onMonthChange }: {
     </div>
     <section className="st-panel st-overview-chart">
       <div className="st-panel-heading"><div><h3>收支节奏</h3><p>{history[0].key} — {month} · 实际现金流</p></div><div className="st-chart-key"><span><i />收入</span><span><i />支出</span></div></div>
-      <div className="st-cash-chart">{history.map(row => <div key={row.key}>
+      <div className="st-chart-plot"><div className="st-chart-scale" aria-hidden="true"><span>{money(hasHistory?chartMax:0)}</span><span>{money(hasHistory?Math.round(chartMax/2):0)}</span><span>0</span></div><div className="st-cash-chart">{history.map(row => <div key={row.key}>
         <div className="st-chart-bars" role="img" aria-label={`${row.key}收入${money(row.income)}支出${money(row.expense)}`} title={`${row.key} 收入${money(row.income)} · 支出${money(row.expense)}`}>
           <span style={{ height: `${Math.max(1, row.income / chartMax * 100)}%` }}>{row.income > 0 && <b className="st-chart-value">{money(row.income)}</b>}</span>
           <span style={{ height: `${Math.max(1, row.expense / chartMax * 100)}%` }} />
         </div><small>{Number(row.key.slice(5))}月</small>
-      </div>)}</div>
+      </div>)}</div></div>
       <div className="st-chart-note"><span>{hasHistory ? "按实际发生日期统计，未到账款项不计入" : "这段时间还没有收支记录，登记后会自动生成趋势"}</span></div>
     </section>
   </>;

@@ -8,6 +8,6 @@ export default function StudioMetric({ label, value, foot, kind = "" }: {
     : label.includes("支出") ? ReceiptText : label.includes("结余") ? Wallet : TrendingUp;
   return <article className={`st-metric ${kind}`}>
     <div className="st-metric-top"><span>{label}</span><span className="st-metric-symbol"><Icon size={18} /></span></div>
-    <strong>{moneyCents(value)}</strong><small>{foot}</small>
+    <strong><span className="st-currency">{value<0?"−":""}¥</span>{moneyCents(Math.abs(value)).replace(/^[^\d]+/, "")}</strong><small>{foot}</small>
   </article>;
 }
