@@ -8,6 +8,8 @@ export default function StudioOverview({ data, name, month, onMonthChange }: {
 }) {
   const thisMonth = todayChina().slice(0, 7);
   const summary = studioSummary(data, month);
+  const previous = studioSummary(data, shiftMonth(month, -1));
+  const comparison = (value:number, before:number) => value===before?"与上月持平":`较上月${value>before?"增加":"减少"} ${money(Math.abs(value-before))}`;
   const period = month === thisMonth ? "本月" : "所选月";
   const history = Array.from({ length: 6 }, (_, index) => {
     const key = shiftMonth(month, index - 5);
@@ -45,9 +47,9 @@ export default function StudioOverview({ data, name, month, onMonthChange }: {
       </div>
     </div>
     <div className="st-metrics">
-      <StudioMetric label={`${period}实际收入`} value={summary.income} foot={`${month} · 已登记到账`} kind="income" />
-      <StudioMetric label={`${period}实际支出`} value={summary.expense} foot={`${month} · 项目成本与经营支出`} />
-      <StudioMetric label={`${period}收支结余`} value={summary.balance} foot="实际收入 − 实际支出" />
+      <StudioMetric label={`${period}实际收入`} value={summary.income} foot={comparison(summary.income,previous.income)} kind="income" />
+      <StudioMetric label={`${period}实际支出`} value={summary.expense} foot={comparison(summary.expense,previous.expense)} />
+      <StudioMetric label={`${period}收支结余`} value={summary.balance} foot={comparison(summary.balance,previous.balance)} />
       <StudioMetric label="项目待收款" value={summary.remaining} foot={summary.overdue ? `截至今天 · 其中逾期 ${money(summary.overdue)}` : "截至今天 · 全部项目未到账款项"} kind="highlight" />
     </div>
     <section className="st-panel st-overview-chart">
@@ -58,7 +60,7 @@ export default function StudioOverview({ data, name, month, onMonthChange }: {
           <span style={{ height: `${Math.max(1, row.expense / chartMax * 100)}%` }} />
         </div><small>{Number(row.key.slice(5))}月</small>
       </div>)}</div></div>
-      <div className="st-chart-note"><span>{hasHistory ? "按实际发生日期统计，未到账款项不计入" : "这段时间还没有收支记录，登记后会自动生成趋势"}</span></div>
+      <div className="st-chart-note"><span>{hasHistory ? "按实际发生日期统计，未到账款项不计入；结余不等于会计利润。本月未结束时，对比上月完整月份" : "这段时间还没有收支记录，登记后会自动生成趋势"}</span></div>
     </section>
   </>;
 }
